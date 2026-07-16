@@ -1,0 +1,13 @@
+# Normalise line endings to LF in the repository.
+#
+# Development here is on Windows while CI and Render run Linux. Without this,
+# CRLF can reach the repo and Prettier's --check (which expects LF) fails on CI
+# for files that look fine locally.
+* text=auto eol=lf
+
+# Binary — never touch these.
+*.pdf binary
+*.mp3 binary
+*.png binary
+*.jpg binary
+*.ico binary

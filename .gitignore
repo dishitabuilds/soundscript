@@ -1,0 +1,18 @@
+node_modules/
+
+# Secrets. See .env.example for the shape of each.
+.env
+.env.local
+tts-frontend/.env
+tts-frontend/.env.local
+
+# Build output
+tts-frontend/dist/
+
+# Supabase CLI scratch state, rewritten on every link/push
+supabase/.temp/
+
+# package-lock.json is deliberately NOT ignored. `npm ci` in CI and on Render
+# installs exactly what it pins, which is the entire point of a lockfile --
+# without it committed, a deploy resolves different versions than the ones tested
+# and `npm ci` fails outright.

@@ -1,0 +1,10 @@
+# Generated or vendored — not ours to format, and reformatting it would produce
+# enormous diffs that hide real changes.
+node_modules/
+tts-frontend/node_modules/
+tts-frontend/dist/
+package-lock.json
+tts-frontend/package-lock.json
+
+# Supabase CLI scratch state, rewritten on every link/push.
+supabase/.temp/
