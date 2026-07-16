@@ -1,0 +1,49 @@
+# Render deployment for the SoundScript API.
+#
+# Not Vercel: this API responds immediately and keeps synthesising in the
+# background, and it holds SSE connections open while a job runs. Serverless
+# functions are killed once the response is sent, which would end every job at
+# the moment it started. Render runs a persistent process, so the worker pool and
+# the event stream both survive.
+
+services:
+  - type: web
+    name: soundscript-api
+    runtime: node
+    plan: free
+    region: singapore
+
+    # ci, not install: it installs exactly what package-lock.json pins, so a
+    # deploy cannot quietly pick up a different version than the one tested.
+    buildCommand: npm ci
+    startCommand: npm start
+
+    # Render restarts the service if this stops answering. It reports whether the
+    # API keys are actually present, so a misconfigured deploy is visible without
+    # reading logs.
+    healthCheckPath: /api/health
+
+    envVars:
+      # sync: false means "set this in the dashboard, never in the repo".
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: ELEVEN_API_KEY
+        sync: false
+
+      # Comma-separated. Must include the deployed frontend's origin, or every
+      # browser request is refused by CORS.
+      - key: ALLOWED_ORIGINS
+        sync: false
+
+      - key: DAILY_CHAR_QUOTA
+        value: "10000"
+
+      # Conservative on the free plan's shared CPU: each worker holds an HTTP
+      # request to ElevenLabs and a buffer of audio.
+      - key: WORKER_CONCURRENCY
+        value: "2"
+
+      - key: NODE_VERSION
+        value: "20"
