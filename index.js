@@ -7,6 +7,10 @@ const multer = require("multer");
 
 const convertRoutes = require("./routes/convert");
 const documentRoutes = require("./routes/documents");
+const voiceRoutes = require("./routes/voices");
+const pronunciationRoutes = require("./routes/pronunciations");
+const feedRoutes = require("./routes/feed");
+const { ocrAvailable } = require("./lib/extract/ocr");
 
 const app = express();
 
@@ -43,25 +47,35 @@ app.get("/api/health", (req, res) => {
     // Reported so a deploy can be checked without reading logs: a missing key
     // here explains every 500 from /api/convert at a glance.
     elevenlabs: Boolean(process.env.ELEVEN_API_KEY),
+    openai: Boolean(process.env.OPENAI_API_KEY),
     supabase: Boolean(
       process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY,
     ),
+    ocr: ocrAvailable(),
+    // false means jobs wait for the standalone worker (worker.js).
+    inlineProcessing: process.env.INLINE_PROCESSING !== "false",
+    feeds: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
   });
 });
 
 app.use("/api/convert", convertRoutes.router);
 app.use("/api/documents", documentRoutes.router);
+app.use("/api/voices", voiceRoutes.router);
+app.use("/api/pronunciations", pronunciationRoutes.router);
+app.use("/api/feed", feedRoutes.router);
+// Public: podcast apps authenticate with the token in the URL, not a JWT.
+app.use("/feeds", feedRoutes.publicRouter);
 
 // Multer signals "file too large" by throwing, and without this the client gets
 // an opaque 500 instead of being told which limit it hit.
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === "LIMIT_FILE_SIZE") {
-      return res.status(413).json({ error: "That PDF is too large." });
+      return res.status(413).json({ error: "That file is too large." });
     }
     return res.status(400).json({ error: err.message });
   }
-  if (err && /Only PDF uploads/.test(err.message)) {
+  if (err && /Unsupported file type/.test(err.message)) {
     return res.status(415).json({ error: err.message });
   }
   if (err && /not allowed by CORS/.test(err.message)) {

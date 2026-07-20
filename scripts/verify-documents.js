@@ -10,7 +10,7 @@ const { buildPdf } = require("../test/helpers/make-pdf");
 const { contentHash } = require("../lib/tts");
 const { cleanPages } = require("../lib/text/clean");
 const { chunkText } = require("../lib/text/chunker");
-const { extractPages } = require("../lib/pdf/extract");
+const { extractPages } = require("../lib/extract/pdf");
 
 const API = process.env.API_URL || "http://localhost:5000";
 const URL = process.env.SUPABASE_URL;

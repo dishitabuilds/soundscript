@@ -198,6 +198,26 @@ test("chapters mark paragraph starts with cumulative timestamps", async () => {
         "chapter timestamps must be strictly increasing",
       );
     }
+
+    // The timeline is the read-along contract: one entry per chunk, in order,
+    // each spanning real time and agreeing with the chapter marks.
+    assert.strictEqual(result.timeline.length, 3, "one entry per chunk");
+    assert.deepStrictEqual(
+      result.timeline.map((t) => t.idx),
+      [0, 1, 2],
+    );
+    result.timeline.forEach((entry, i) => {
+      assert.ok(
+        entry.endSeconds > entry.startSeconds,
+        `chunk ${i} must span time`,
+      );
+      assert.strictEqual(entry.paragraphIdx, i);
+      assert.strictEqual(
+        entry.startSeconds,
+        result.chapters[i].startSeconds,
+        "a paragraph-opening chunk starts exactly at its chapter mark",
+      );
+    });
   });
 });
 

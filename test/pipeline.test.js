@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert");
 const { buildPdf } = require("./helpers/make-pdf");
-const { extractPages, pageCount } = require("../lib/pdf/extract");
+const { extractPages, pageCount } = require("../lib/extract/pdf");
 const { cleanPages } = require("../lib/text/clean");
 const { chunkText } = require("../lib/text/chunker");
 
