@@ -87,8 +87,10 @@ Without this, the browser gets a CORS error on every request.
   sleeps or restarts mid-job; `POST /api/documents/:id/process` requeues it. For
   resilience, run the standalone worker (`worker.js`) as a separate Render
   service with `INLINE_PROCESSING=false` and `SUPABASE_SERVICE_ROLE_KEY` set.
-- **OCR is off in this deploy** (`--omit=optional` in the API build). Drop that
-  flag in `render.yaml` to enable scanned-PDF OCR; expect slower builds.
+- **OCR is off in this deploy** (`--omit=optional` skips `tesseract.js`). Drop
+  that flag in `render.yaml` to enable scanned-PDF OCR; expect slower builds.
+  Regular PDF text extraction is unaffected — `@napi-rs/canvas`, which pdfjs
+  needs, is a required dependency and always installs.
 - **ElevenLabs free tier is 10,000 characters/month.** When it's exhausted,
   synthesis fails with a clear "monthly quota reached" message. Set
   `OPENAI_API_KEY` and pick an OpenAI voice to keep going.

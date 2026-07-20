@@ -25,9 +25,9 @@ jobs:
           node-version: 20
           cache: npm
 
-      # --omit=optional skips the OCR stack (tesseract.js, @napi-rs/canvas):
-      # tens of megabytes that no test exercises. lib/extract treats the
-      # missing deps as "OCR unavailable" and everything else runs unchanged.
+      # --omit=optional skips tesseract.js (the OCR engine no test exercises).
+      # @napi-rs/canvas stays -- it is a regular dependency because pdfjs needs
+      # it for DOMMatrix during PDF text extraction, which the tests do cover.
       - run: npm ci --omit=optional
 
       # No secrets here on purpose. The suite covers the chunker, sentence
