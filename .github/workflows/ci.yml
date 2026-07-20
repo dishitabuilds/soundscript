@@ -25,10 +25,11 @@ jobs:
           node-version: 20
           cache: npm
 
-      # --omit=optional skips tesseract.js (the OCR engine no test exercises).
-      # @napi-rs/canvas stays -- it is a regular dependency because pdfjs needs
-      # it for DOMMatrix during PDF text extraction, which the tests do cover.
-      - run: npm ci --omit=optional
+      # Full install, not --omit=optional: @napi-rs/canvas (needed by pdfjs for
+      # DOMMatrix) ships its native binary as its own optional platform package,
+      # and --omit=optional strips that too (npm/cli#4828), breaking every PDF
+      # test with "DOMMatrix is not defined".
+      - run: npm ci
 
       # No secrets here on purpose. The suite covers the chunker, sentence
       # splitting, PDF cleaning, EPUB/DOCX extraction, pronunciation rules,

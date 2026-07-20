@@ -20,11 +20,12 @@ services:
     # ci, not install: it installs exactly what package-lock.json pins, so a
     # deploy cannot quietly pick up a different version than the one tested.
     #
-    # --omit=optional skips tesseract.js (the ~10MB OCR engine), so scanned-PDF
-    # OCR is OFF in this deploy; drop --omit to turn it on. @napi-rs/canvas is a
-    # regular dependency, not optional -- pdfjs needs it for every PDF -- so it
-    # still installs here.
-    buildCommand: npm ci --omit=optional
+    # Full install (no --omit=optional): pdfjs needs @napi-rs/canvas for
+    # DOMMatrix on every PDF, and that package ships its native binary as its
+    # own optional platform dependency -- --omit=optional would strip it
+    # (npm/cli#4828) and break all PDF parsing. This also installs tesseract.js,
+    # so scanned-PDF OCR is available (its ~10MB model downloads on first use).
+    buildCommand: npm ci
     startCommand: npm start
 
     # Render restarts the service if this stops answering. It reports whether the
