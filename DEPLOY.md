@@ -43,22 +43,22 @@ In Render: **New → Blueprint**, pick the GitHub repo. Render reads
 
 ### `soundscript-api` env vars
 
-| Key | Value |
-| --- | --- |
-| `SUPABASE_URL` | your project URL |
-| `SUPABASE_ANON_KEY` | anon key |
-| `ELEVEN_API_KEY` | ElevenLabs key (optional if using OpenAI) |
-| `OPENAI_API_KEY` | OpenAI key (optional; also the ElevenLabs-quota fallback) |
-| `SUPABASE_SERVICE_ROLE_KEY` | only if you want the podcast feed |
-| `ALLOWED_ORIGINS` | **fill in step 4** |
+| Key                         | Value                                                     |
+| --------------------------- | --------------------------------------------------------- |
+| `SUPABASE_URL`              | your project URL                                          |
+| `SUPABASE_ANON_KEY`         | anon key                                                  |
+| `ELEVEN_API_KEY`            | ElevenLabs key (optional if using OpenAI)                 |
+| `OPENAI_API_KEY`            | OpenAI key (optional; also the ElevenLabs-quota fallback) |
+| `SUPABASE_SERVICE_ROLE_KEY` | only if you want the podcast feed                         |
+| `ALLOWED_ORIGINS`           | **fill in step 4**                                        |
 
 ### `soundscript-web` env vars
 
-| Key | Value |
-| --- | --- |
-| `VITE_BACKEND_URL` | the API URL, e.g. `https://soundscript-api.onrender.com` |
-| `VITE_SUPABASE_URL` | your project URL |
-| `VITE_SUPABASE_ANON_KEY` | anon key |
+| Key                      | Value                                                    |
+| ------------------------ | -------------------------------------------------------- |
+| `VITE_BACKEND_URL`       | the API URL, e.g. `https://soundscript-api.onrender.com` |
+| `VITE_SUPABASE_URL`      | your project URL                                         |
+| `VITE_SUPABASE_ANON_KEY` | anon key                                                 |
 
 ## 4. Close the CORS loop
 
