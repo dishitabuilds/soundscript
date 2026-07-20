@@ -48,8 +48,8 @@ app.get("/", (req, res) => {
   res.send("SoundScript Backend is running!");
 });
 
-app.get("/api/health", (req, res) => {
-  res.json({
+app.get("/api/health", async (req, res) => {
+  const body = {
     ok: true,
     // Reported so a deploy can be checked without reading logs: a missing key
     // here explains every 500 from /api/convert at a glance.
@@ -72,7 +72,24 @@ app.get("/api/health", (req, res) => {
     // false means jobs wait for the standalone worker (worker.js).
     inlineProcessing: process.env.INLINE_PROCESSING !== "false",
     feeds: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-  });
+  };
+
+  // ?debug=1 exercises the real auth path once and reports whether the client
+  // could reach Supabase. Gated so Render's frequent health pings stay cheap.
+  // authOk=false means token verification throws -- the error string (never a
+  // secret) says why. Safe to leave in: it reveals no keys.
+  if (req.query.debug === "1") {
+    try {
+      const { getAuthClient } = require("./lib/supabase");
+      await getAuthClient().auth.getUser("health.diagnostic.token");
+      body.authOk = true; // returned (even an "invalid token" error) => configured
+    } catch (err) {
+      body.authOk = false;
+      body.authError = err.message;
+    }
+  }
+
+  res.json(body);
 });
 
 app.use("/api/convert", convertRoutes.router);
