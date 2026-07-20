@@ -22,12 +22,18 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "http://localhost:5173")
   .map((o) => o.trim())
   .filter(Boolean);
 
+// ALLOWED_ORIGINS=* means allow any origin. Safe here because auth is a Bearer
+// JWT rather than a cookie -- a hostile origin still cannot forge a session,
+// and RLS guards every row regardless of who asks.
+const ALLOW_ALL_ORIGINS = ALLOWED_ORIGINS.includes("*");
+
 app.use(
   cors({
     origin(origin, callback) {
       // Non-browser callers (curl, health checks) send no Origin.
       if (!origin) return callback(null, true);
-      if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+      if (ALLOW_ALL_ORIGINS || ALLOWED_ORIGINS.includes(origin))
+        return callback(null, true);
       callback(new Error(`Origin ${origin} not allowed by CORS`));
     },
   }),
