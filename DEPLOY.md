@@ -50,27 +50,26 @@ In Render: **New → Blueprint**, pick the GitHub repo. Render reads
 | `ELEVEN_API_KEY`            | ElevenLabs key (optional if using OpenAI)                 |
 | `OPENAI_API_KEY`            | OpenAI key (optional; also the ElevenLabs-quota fallback) |
 | `SUPABASE_SERVICE_ROLE_KEY` | only if you want the podcast feed                         |
-| `ALLOWED_ORIGINS`           | **fill in step 4**                                        |
+
+`ALLOWED_ORIGINS` is already set in `render.yaml` to this deployment's web
+origin, so there is nothing to fill in for it.
 
 ### `soundscript-web` env vars
 
-| Key                      | Value                                                    |
-| ------------------------ | -------------------------------------------------------- |
-| `VITE_BACKEND_URL`       | the API URL, e.g. `https://soundscript-api.onrender.com` |
-| `VITE_SUPABASE_URL`      | your project URL                                         |
-| `VITE_SUPABASE_ANON_KEY` | anon key                                                 |
+| Key                      | Value            |
+| ------------------------ | ---------------- |
+| `VITE_SUPABASE_URL`      | your project URL |
+| `VITE_SUPABASE_ANON_KEY` | anon key         |
 
-## 4. Close the CORS loop
+`VITE_BACKEND_URL` is already set in `render.yaml` to the API's URL.
 
-The two services reference each other, so one value can only be filled once both
-have URLs:
+## 4. If you rename either service
 
-1. After the first deploy, copy the **web** service URL
-   (e.g. `https://soundscript-web.onrender.com`).
-2. Set the API's `ALLOWED_ORIGINS` to exactly that origin (comma-separate if you
-   have more than one), and redeploy the API.
-
-Without this, the browser gets a CORS error on every request.
+`render.yaml` hard-codes the two cross-references — `ALLOWED_ORIGINS` (API →
+web origin) and `VITE_BACKEND_URL` (web → API URL). They match the default
+service names. **Only if you rename a service** (giving it a different
+`.onrender.com` URL), update those two values in `render.yaml` to match, or the
+browser will get a CORS error. With the default names, there is nothing to do.
 
 ## 5. Verify
 

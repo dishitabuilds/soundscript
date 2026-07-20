@@ -50,11 +50,11 @@ services:
       - key: OPENAI_API_KEY
         sync: false
 
-      # Comma-separated. Must include the deployed frontend's origin exactly, or
-      # every browser request is refused by CORS. Fill this in AFTER the static
-      # site below gets its URL (see DEPLOY.md).
+      # Comma-separated allow-list; every other browser origin is refused by
+      # CORS. This is this deployment's web origin -- update it if you rename
+      # the web service. (Use * to allow any origin.)
       - key: ALLOWED_ORIGINS
-        sync: false
+        value: https://soundscript-web.onrender.com
 
       - key: DAILY_CHAR_QUOTA
         value: "10000"
@@ -90,11 +90,11 @@ services:
         destination: /index.html
 
     envVars:
-      # Baked into the bundle at build time. VITE_BACKEND_URL must be the API
-      # service's URL (https://soundscript-api.onrender.com by default). The
-      # anon key is safe in the browser -- RLS is what actually protects data.
+      # Baked into the bundle at build time. This deployment's API URL -- update
+      # it if you rename the API service. The anon key below is safe in the
+      # browser; RLS is what actually protects data.
       - key: VITE_BACKEND_URL
-        sync: false
+        value: https://soundscript-api-55nk.onrender.com
       - key: VITE_SUPABASE_URL
         sync: false
       - key: VITE_SUPABASE_ANON_KEY

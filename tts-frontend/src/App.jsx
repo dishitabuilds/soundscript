@@ -365,6 +365,10 @@ export default function App() {
           )}
         </div>
       </div>
+
+      <footer className="mt-auto py-8 text-center text-sm text-soft">
+        made with <span className="text-gold">♥</span> by dishita
+      </footer>
     </div>
   );
 }

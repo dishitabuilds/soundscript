@@ -1,11 +1,8 @@
 import { supabase } from "./supabase";
 
-// Falls back to the deployed API when VITE_BACKEND_URL is not set at build time
-// (as on the Render static-site build). An explicit env var always wins, so
-// local dev and other hosts are unaffected.
-const BASE =
-  import.meta.env.VITE_BACKEND_URL ||
-  "https://soundscript-api-55nk.onrender.com";
+// The API origin, baked in at build time. Set by render.yaml for the deploy and
+// by .env for local dev.
+const BASE = import.meta.env.VITE_BACKEND_URL;
 
 async function authHeader() {
   const {
