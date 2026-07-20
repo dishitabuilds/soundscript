@@ -7,6 +7,10 @@ the right places, clickable chapters, read-along highlighting, and a private
 podcast feed your podcast app can subscribe to. Short text can also be
 converted directly.
 
+**Deploying?** See [DEPLOY.md](DEPLOY.md), or one-click the API + web frontend:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/dishitabuilds/soundscript)
+
 ---
 
 ## Why it is built this way
