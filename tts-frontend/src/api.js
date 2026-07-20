@@ -1,8 +1,13 @@
 import { supabase } from "./supabase";
 
-// The API origin, baked in at build time. Set by render.yaml for the deploy and
-// by .env for local dev.
-const BASE = import.meta.env.VITE_BACKEND_URL;
+// The API origin, baked in at build time from VITE_BACKEND_URL (render.yaml for
+// the deploy, .env for local). The fallback matters: Render preserves an
+// already-set env var, so a service first deployed with VITE_BACKEND_URL blank
+// keeps it blank even after render.yaml gains a value -- without the fallback
+// the built bundle would have no API to call.
+const BASE =
+  import.meta.env.VITE_BACKEND_URL ||
+  "https://soundscript-api-55nk.onrender.com";
 
 async function authHeader() {
   const {
