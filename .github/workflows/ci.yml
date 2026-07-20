@@ -25,11 +25,15 @@ jobs:
           node-version: 20
           cache: npm
 
-      - run: npm ci
+      # --omit=optional skips the OCR stack (tesseract.js, @napi-rs/canvas):
+      # tens of megabytes that no test exercises. lib/extract treats the
+      # missing deps as "OCR unavailable" and everything else runs unchanged.
+      - run: npm ci --omit=optional
 
       # No secrets here on purpose. The suite covers the chunker, sentence
-      # splitting, PDF cleaning, retry/backoff and ffmpeg stitching, and every
-      # one of those is exercised with generated fixtures and the ffmpeg-static
+      # splitting, PDF cleaning, EPUB/DOCX extraction, pronunciation rules,
+      # retry/backoff, ffmpeg stitching and RSS rendering, and every one of
+      # those is exercised with generated fixtures and the ffmpeg-static
       # binary -- so a fork's PR runs the full suite with nothing configured.
       # The scripts that do need credentials (verify-schema, verify-documents,
       # verify-worker, verify-sse) hit the real database and spend real

@@ -1,12 +1,16 @@
-# Render deployment for the SoundScript API.
+# Render deployment for SoundScript: the API (a persistent Node service) and
+# the web frontend (a static Vite build), from one Blueprint.
 #
-# Not Vercel: this API responds immediately and keeps synthesising in the
-# background, and it holds SSE connections open while a job runs. Serverless
-# functions are killed once the response is sent, which would end every job at
-# the moment it started. Render runs a persistent process, so the worker pool and
-# the event stream both survive.
+# Why the API is a persistent service, not serverless: it responds immediately
+# and keeps synthesising in the background, and it holds SSE connections open
+# while a job runs. Serverless functions are killed once the response is sent,
+# which would end every job at the moment it started. Render runs a persistent
+# process, so the worker pool and the event stream both survive.
 
 services:
+  # ---------------------------------------------------------------------------
+  # API
+  # ---------------------------------------------------------------------------
   - type: web
     name: soundscript-api
     runtime: node
@@ -15,7 +19,12 @@ services:
 
     # ci, not install: it installs exactly what package-lock.json pins, so a
     # deploy cannot quietly pick up a different version than the one tested.
-    buildCommand: npm ci
+    #
+    # --omit=optional skips the OCR stack (tesseract.js + @napi-rs/canvas): a
+    # native binary and a ~10MB model that make free-tier builds slow and
+    # fragile. Scanned-PDF OCR is therefore OFF in this deploy; drop --omit to
+    # turn it on if you need it.
+    buildCommand: npm ci --omit=optional
     startCommand: npm start
 
     # Render restarts the service if this stops answering. It reports whether the
@@ -32,8 +41,17 @@ services:
       - key: ELEVEN_API_KEY
         sync: false
 
-      # Comma-separated. Must include the deployed frontend's origin, or every
-      # browser request is refused by CORS.
+      # Optional extras -- set in the dashboard if used. The service role key
+      # enables the podcast feed; OPENAI_API_KEY adds a second voice provider
+      # (and a fallback when ElevenLabs' monthly quota runs out).
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+
+      # Comma-separated. Must include the deployed frontend's origin exactly, or
+      # every browser request is refused by CORS. Fill this in AFTER the static
+      # site below gets its URL (see DEPLOY.md).
       - key: ALLOWED_ORIGINS
         sync: false
 
@@ -47,3 +65,33 @@ services:
 
       - key: NODE_VERSION
         value: "20"
+
+  # ---------------------------------------------------------------------------
+  # Web frontend (static Vite build)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: soundscript-web
+    runtime: static
+    # Everything below is relative to this subfolder, so the same repo holds
+    # both services.
+    rootDir: tts-frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+
+    # No client-side router in this app, but a catch-all rewrite keeps a hard
+    # refresh on any path serving index.html rather than 404ing.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+    envVars:
+      # Baked into the bundle at build time. VITE_BACKEND_URL must be the API
+      # service's URL (https://soundscript-api.onrender.com by default). The
+      # anon key is safe in the browser -- RLS is what actually protects data.
+      - key: VITE_BACKEND_URL
+        sync: false
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
