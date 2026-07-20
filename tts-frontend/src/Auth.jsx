@@ -47,13 +47,13 @@ export default function Auth({ isGuest, onDone, onBack }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-black via-gray-900 to-blue-950 text-white px-6">
-      <div className="bg-white/10 backdrop-blur-2xl p-8 rounded-2xl w-full max-w-md border border-white/10 shadow-2xl">
-        <h2 className="text-2xl font-bold mb-2 text-center">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-page text-ink transition-colors px-6">
+      <div className="bg-surface p-8 rounded-2xl w-full max-w-md border border-line shadow-sm">
+        <h2 className="font-display text-2xl mb-2 text-center">
           {isGuest ? "Save your work" : "Sign in"}
         </h2>
 
-        <p className="text-sm text-gray-300 mb-6 text-center">
+        <p className="text-sm text-soft mb-6 text-center">
           {isGuest
             ? "Add an email and password to keep your conversions across devices."
             : "Sign in to your account."}
@@ -63,7 +63,7 @@ export default function Auth({ isGuest, onDone, onBack }) {
           type="email"
           placeholder="Email"
           value={email}
-          className="w-full p-3 rounded-lg mb-3 bg-white/5 border border-white/20 focus:border-blue-400 outline-none transition"
+          className="w-full p-3 rounded-lg mb-3 bg-sunken border border-line focus:border-gold outline-none transition placeholder:text-soft"
           onChange={(e) => setEmail(e.target.value)}
         />
 
@@ -71,16 +71,16 @@ export default function Auth({ isGuest, onDone, onBack }) {
           type="password"
           placeholder="Password"
           value={password}
-          className="w-full p-3 rounded-lg mb-3 bg-white/5 border border-white/20 focus:border-blue-400 outline-none transition"
+          className="w-full p-3 rounded-lg mb-3 bg-sunken border border-line focus:border-gold outline-none transition placeholder:text-soft"
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        {error && <p className="text-red-400 text-sm mb-3">❗ {error}</p>}
-        {notice && <p className="text-green-400 text-sm mb-3">✅ {notice}</p>}
+        {error && <p className="text-danger text-sm mb-3">❗ {error}</p>}
+        {notice && <p className="text-ok text-sm mb-3">✅ {notice}</p>}
 
         <button
           disabled={busy || !email || !password}
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 py-3 rounded-lg mb-3 font-semibold transition disabled:opacity-50"
+          className="w-full bg-gold hover:bg-gold-strong text-on-gold py-3 rounded-lg mb-3 font-semibold transition disabled:opacity-50"
           onClick={isGuest ? handleUpgrade : handleLogin}
         >
           {busy ? "Working…" : isGuest ? "Create account" : "Sign in"}
@@ -89,7 +89,7 @@ export default function Auth({ isGuest, onDone, onBack }) {
         {isGuest && (
           <button
             disabled={busy || !email || !password}
-            className="w-full bg-white/10 hover:bg-white/20 border border-white/10 py-3 rounded-lg mb-3 text-sm transition disabled:opacity-50"
+            className="w-full bg-sunken hover:bg-page border border-line py-3 rounded-lg mb-3 text-sm transition disabled:opacity-50"
             onClick={handleLogin}
           >
             I already have an account
@@ -97,14 +97,14 @@ export default function Auth({ isGuest, onDone, onBack }) {
         )}
 
         <button
-          className="w-full text-gray-400 hover:text-white py-2 text-sm transition"
+          className="w-full text-soft hover:text-ink py-2 text-sm transition"
           onClick={onBack}
         >
           ← Back
         </button>
 
         {isGuest && (
-          <p className="text-xs text-gray-500 mt-4 text-center">
+          <p className="text-xs text-soft mt-4 text-center">
             Signing into an existing account will leave this guest session's
             history behind.
           </p>

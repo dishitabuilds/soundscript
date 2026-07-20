@@ -1,10 +1,14 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import Auth from "./Auth";
 import { supabase } from "./supabase";
 import History from "./History";
 import Library from "./Library";
 import DocumentView from "./DocumentView";
+import Settings from "./Settings";
+import { convertText } from "./api";
+import { useTheme } from "./theme";
+import ThemeToggle from "./ThemeToggle";
+import Loading from "./Loading";
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -12,13 +16,17 @@ export default function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [openDocumentId, setOpenDocumentId] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const [text, setText] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const { dark, toggle } = useTheme();
 
   const MAX_CHARS = 500;
 
@@ -85,41 +93,20 @@ export default function App() {
     if (text.length > MAX_CHARS)
       return toast(`Max ${MAX_CHARS} characters allowed.`, "error");
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session?.access_token) {
-      return toast(
-        "No active session. Reload the page and try again.",
-        "error",
-      );
-    }
-
     setLoading(true);
     setAudioUrl("");
 
     try {
-      // The backend derives the user id from this token. Sending a user_id in
-      // the body would be meaningless now, and forgeable before.
-      const res = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/convert`,
-        { text },
-        { headers: { Authorization: `Bearer ${session.access_token}` } },
-      );
-
-      setAudioUrl(res.data.audioUrl);
+      const data = await convertText(text);
+      setAudioUrl(data.audioUrl);
       toast(
-        res.data.cached
+        data.cached
           ? "Loaded from cache — no API call needed!"
           : "Audio generated successfully!",
         "success",
       );
     } catch (err) {
-      const serverMsg =
-        err.response?.data?.error || err.message || "Error generating audio.";
-      console.error("TTS Error:", err.response?.data || err);
-      toast(serverMsg, "error");
+      toast(err.message || "Error generating audio.", "error");
     }
 
     setLoading(false);
@@ -135,153 +122,231 @@ export default function App() {
     }, 2500);
   };
 
+  // Every view shares the toggle, so it is mounted once out here.
+  const chrome = <ThemeToggle dark={dark} onToggle={toggle} />;
+
   if (booting) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-blue-950 text-white">
-        <p className="text-gray-400">Starting session…</p>
-      </div>
+      <>
+        {chrome}
+        <Loading message="Starting session…" />
+      </>
     );
   }
 
+  // Nav destinations, shared between the desktop bar and the mobile drawer so
+  // the two can never drift apart.
+  const go = (fn) => () => {
+    fn();
+    setMenuOpen(false);
+  };
+  const navLinks = [
+    { label: "Library", onClick: go(() => setShowLibrary(true)) },
+    { label: "History", onClick: go(() => setShowHistory(true)) },
+    { label: "Settings", onClick: go(() => setShowSettings(true)) },
+  ];
+
   if (showAuth)
     return (
-      <Auth
-        isGuest={isGuest}
-        onDone={() => setShowAuth(false)}
-        onBack={() => setShowAuth(false)}
-      />
+      <>
+        {chrome}
+        <Auth
+          isGuest={isGuest}
+          onDone={() => setShowAuth(false)}
+          onBack={() => setShowAuth(false)}
+        />
+      </>
     );
 
   if (openDocumentId)
     return (
-      <DocumentView
-        documentId={openDocumentId}
-        onBack={() => setOpenDocumentId(null)}
-      />
+      <>
+        {chrome}
+        <DocumentView
+          documentId={openDocumentId}
+          onBack={() => setOpenDocumentId(null)}
+        />
+      </>
     );
 
   if (showLibrary)
     return (
-      <Library
-        onOpen={(id) => setOpenDocumentId(id)}
-        onBack={() => setShowLibrary(false)}
-      />
+      <>
+        {chrome}
+        <Library
+          onOpen={(id) => setOpenDocumentId(id)}
+          onBack={() => setShowLibrary(false)}
+        />
+      </>
     );
 
   if (showHistory)
-    return <History user={user} onBack={() => setShowHistory(false)} />;
+    return (
+      <>
+        {chrome}
+        <History user={user} onBack={() => setShowHistory(false)} />
+      </>
+    );
+
+  if (showSettings)
+    return (
+      <>
+        {chrome}
+        <Settings onBack={() => setShowSettings(false)} />
+      </>
+    );
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-black via-gray-900 to-blue-950 text-white relative overflow-hidden">
-      {/* Background glowing orbs */}
-      <div className="absolute top-20 left-20 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-20 right-20 w-72 h-72 bg-purple-600/20 rounded-full blur-3xl"></div>
+    <div className="min-h-screen flex flex-col bg-page text-ink transition-colors">
+      {chrome}
 
-      {/* Premium Floating Navbar */}
-      <nav className="w-full flex items-center justify-between px-10 py-5 backdrop-blur-xl bg-white/5 border-b border-white/10 sticky top-0 z-50">
-        <h1 className="text-2xl font-semibold tracking-wide flex items-center gap-2">
-          🔊 <span>SoundScript</span>
-        </h1>
+      <nav className="w-full bg-surface border-b border-line sticky top-0 z-40">
+        <div className="flex items-center justify-between px-5 sm:px-10 py-4">
+          <h1 className="font-display text-xl sm:text-2xl tracking-wide flex items-center gap-2">
+            🔊 <span>SoundScript</span>
+          </h1>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowLibrary(true)}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-white/10 hover:bg-white/20 border border-white/10 transition"
-          >
-            Library
-          </button>
-
-          <button
-            onClick={() => setShowHistory(true)}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-white/10 hover:bg-white/20 border border-white/10 transition"
-          >
-            History
-          </button>
-
-          {isGuest ? (
-            <button
-              onClick={() => setShowAuth(true)}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-500 transition"
-            >
-              Save my work
-            </button>
-          ) : (
-            <>
-              <span className="text-sm text-gray-300 hidden sm:inline">
-                {user?.email}
-              </span>
+          {/* Desktop: inline links. */}
+          <div className="hidden sm:flex items-center gap-2">
+            {navLinks.map((link) => (
               <button
-                onClick={handleLogout}
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-white/10 hover:bg-white/20 border border-white/10 transition"
+                key={link.label}
+                onClick={link.onClick}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-ink hover:bg-sunken border border-transparent hover:border-line transition"
               >
-                Sign out
+                {link.label}
               </button>
-            </>
-          )}
+            ))}
+
+            {isGuest ? (
+              <button
+                onClick={() => setShowAuth(true)}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-gold hover:bg-gold-strong text-on-gold transition"
+              >
+                Save my work
+              </button>
+            ) : (
+              <>
+                <span className="text-sm text-soft max-w-40 truncate">
+                  {user?.email}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-ink hover:bg-sunken border border-line transition"
+                >
+                  Sign out
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Mobile: a hamburger that opens the drawer below. */}
+          <button
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label="Menu"
+            aria-expanded={menuOpen}
+            className="sm:hidden w-10 h-10 rounded-lg hover:bg-sunken border border-line flex items-center justify-center"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
+              {menuOpen ? (
+                <path d="M6 6 L18 18 M18 6 L6 18" />
+              ) : (
+                <path d="M4 7 H20 M4 12 H20 M4 17 H20" />
+              )}
+            </svg>
+          </button>
         </div>
+
+        {/* Mobile drawer. */}
+        {menuOpen && (
+          <div className="sm:hidden px-5 pb-4 flex flex-col gap-1 border-t border-line">
+            {navLinks.map((link) => (
+              <button
+                key={link.label}
+                onClick={link.onClick}
+                className="w-full text-left px-4 py-3 rounded-lg text-base font-medium text-ink hover:bg-sunken transition"
+              >
+                {link.label}
+              </button>
+            ))}
+
+            {isGuest ? (
+              <button
+                onClick={go(() => setShowAuth(true))}
+                className="w-full px-4 py-3 rounded-lg text-base font-semibold bg-gold hover:bg-gold-strong text-on-gold transition mt-1"
+              >
+                Save my work
+              </button>
+            ) : (
+              <>
+                <p className="px-4 pt-2 text-sm text-soft truncate">
+                  {user?.email}
+                </p>
+                <button
+                  onClick={go(handleLogout)}
+                  className="w-full text-left px-4 py-3 rounded-lg text-base font-medium text-ink hover:bg-sunken transition"
+                >
+                  Sign out
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </nav>
 
-      {/* Centered main content */}
-      <div className="flex flex-col items-center w-full px-6 mt-16">
-        <h2 className="text-4xl font-extrabold mb-3 text-center drop-shadow-lg">
-          Transform Text Into
-          <span className="text-blue-400"> Human-like Speech</span>
+      <div className="flex flex-col items-center w-full px-5 sm:px-6 mt-10 sm:mt-16">
+        <h2 className="font-display text-3xl sm:text-4xl mb-3 text-center">
+          Every document deserves
+          <span className="text-gold"> a voice</span>
         </h2>
 
-        <p className="text-gray-400 mb-8 text-center">
-          Got a whole PDF?{" "}
+        <p className="text-soft mb-8 text-center">
+          Got a whole document?{" "}
           <button
             onClick={() => setShowLibrary(true)}
-            className="text-blue-400 hover:text-blue-300 underline"
+            className="text-gold hover:text-gold-strong underline underline-offset-2"
           >
             Turn it into an audiobook
           </button>{" "}
           instead.
         </p>
 
-        <div className="w-full max-w-3xl bg-white/10 backdrop-blur-2xl p-10 rounded-3xl border border-white/10 shadow-2xl">
+        <div className="w-full max-w-3xl bg-surface p-6 sm:p-10 rounded-2xl border border-line shadow-sm">
           <label className="text-lg font-medium">Enter your text</label>
 
           <textarea
-            className="w-full h-56 p-4 rounded-xl mt-3 bg-white/5 border border-white/20 focus:border-blue-400 transition shadow-inner"
-            placeholder="Type your prompt here..."
+            className="w-full h-56 p-4 rounded-xl mt-3 bg-sunken border border-line focus:border-gold outline-none transition placeholder:text-soft"
+            placeholder="Type or paste a short passage…"
             value={text}
             onChange={(e) => setText(e.target.value)}
           ></textarea>
 
-          <p className="text-gray-300 mt-2 text-right">
+          <p className="text-soft mt-2 text-right text-sm tabular-nums">
             {text.length}/{MAX_CHARS}
           </p>
 
           <button
             onClick={handleConvert}
             disabled={loading}
-            className="w-full py-4 mt-6 rounded-xl text-lg font-semibold
-bg-gradient-to-r from-blue-600 to-purple-600
-hover:from-blue-500 hover:to-purple-500
-transition-all shadow-lg hover:shadow-blue-500/30
-disabled:opacity-50"
+            className="w-full py-4 mt-6 rounded-xl text-lg font-semibold bg-gold hover:bg-gold-strong text-on-gold transition shadow-sm disabled:opacity-50"
           >
-            {loading ? "Processing..." : "Convert to Speech"}
+            {loading ? "Narrating…" : "Convert to Speech"}
           </button>
 
-          {/* Toasts */}
-          {error && (
-            <p className="mt-4 text-red-400 text-sm animate-fade-in">
-              ❗ {error}
-            </p>
-          )}
+          {error && <p className="mt-4 text-danger text-sm">❗ {error}</p>}
 
-          {success && (
-            <p className="mt-4 text-green-400 text-sm animate-fade-in">
-              ✅ {success}
-            </p>
-          )}
+          {success && <p className="mt-4 text-ok text-sm">✅ {success}</p>}
 
-          {/* Audio section */}
           {audioUrl && (
-            <div className="mt-10 bg-black/20 p-6 rounded-2xl border border-white/10 shadow-xl">
-              <p className="font-semibold text-lg mb-3">Your Audio</p>
+            <div className="mt-10 bg-sunken p-6 rounded-2xl border border-line">
+              <p className="font-display text-lg mb-3">Your audio</p>
 
               <audio
                 controls
@@ -292,9 +357,9 @@ disabled:opacity-50"
               <a
                 href={audioUrl}
                 download
-                className="text-blue-400 hover:text-blue-300 underline"
+                className="text-gold hover:text-gold-strong underline underline-offset-2 text-sm"
               >
-                Download Audio
+                Download audio
               </a>
             </div>
           )}
