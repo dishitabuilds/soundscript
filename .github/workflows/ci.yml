@@ -22,7 +22,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       # Full install, not --omit=optional: @napi-rs/canvas (needed by pdfjs for
@@ -55,7 +55,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: tts-frontend/package-lock.json
 
@@ -82,7 +82,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       # --check rather than --write: CI reports, it does not quietly rewrite the
       # branch under the author.

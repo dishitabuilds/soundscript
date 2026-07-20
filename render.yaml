@@ -64,8 +64,11 @@ services:
       - key: WORKER_CONCURRENCY
         value: "2"
 
+      # 22, not 20: @supabase/supabase-js v2.86 requires a native WebSocket,
+      # which Node only ships from 22 onward. On 20 createClient throws at
+      # startup and every token verification 500s.
       - key: NODE_VERSION
-        value: "20"
+        value: "22"
 
   # ---------------------------------------------------------------------------
   # Web frontend (static Vite build)
