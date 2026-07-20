@@ -11,6 +11,7 @@ const voiceRoutes = require("./routes/voices");
 const pronunciationRoutes = require("./routes/pronunciations");
 const feedRoutes = require("./routes/feed");
 const { ocrAvailable } = require("./lib/extract/ocr");
+const { supabaseUrl } = require("./lib/supabase");
 
 const app = express();
 
@@ -57,6 +58,16 @@ app.get("/api/health", (req, res) => {
     supabase: Boolean(
       process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY,
     ),
+    // The configured Supabase host, so a misconfigured URL is visible without
+    // reading logs. Not a secret -- the project ref ships in the browser
+    // bundle. null means the URL is malformed (the usual cause of auth 500s).
+    supabaseHost: (() => {
+      try {
+        return new URL(supabaseUrl()).host;
+      } catch {
+        return null;
+      }
+    })(),
     ocr: ocrAvailable(),
     // false means jobs wait for the standalone worker (worker.js).
     inlineProcessing: process.env.INLINE_PROCESSING !== "false",
