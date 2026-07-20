@@ -3,6 +3,9 @@ node_modules/
 # OS noise
 .DS_Store
 
+# Personal interview-prep notes, kept out of the public repo
+interview.html
+
 # Secrets. See .env.example for the shape of each.
 .env
 .env.local
