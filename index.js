@@ -76,13 +76,27 @@ app.get("/api/health", async (req, res) => {
 
   // ?debug=1 exercises the real auth path once and reports whether the client
   // could reach Supabase. Gated so Render's frequent health pings stay cheap.
-  // authOk=false means token verification throws -- the error string (never a
-  // secret) says why. Safe to leave in: it reveals no keys.
+  // authOk=false means the auth server never answered -- the error string
+  // (never a secret) says why. Safe to leave in: it reveals no keys.
   if (req.query.debug === "1") {
     try {
       const { getAuthClient } = require("./lib/supabase");
-      await getAuthClient().auth.getUser("health.diagnostic.token");
-      body.authOk = true; // returned (even an "invalid token" error) => configured
+      const { error } = await getAuthClient().auth.getUser(
+        "health.diagnostic.token",
+      );
+
+      // supabase-js returns network failures instead of throwing, so a `try`
+      // that merely completes proves nothing: an unreachable project used to
+      // report authOk:true while every browser login failed -- the one
+      // diagnostic meant to catch that outage was the one lying about it.
+      // Only a reply from the auth server counts: an "invalid token" 401 is a
+      // reply and means configured; AuthRetryableFetchError with status 0
+      // means the request never got one.
+      const noAnswer =
+        error && error.name === "AuthRetryableFetchError" && !error.status;
+
+      body.authOk = !noAnswer;
+      if (noAnswer) body.authError = `Supabase unreachable: ${error.message}`;
     } catch (err) {
       body.authOk = false;
       body.authError = err.message;

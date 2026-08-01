@@ -10,6 +10,14 @@ import { useTheme } from "./theme";
 import ThemeToggle from "./ThemeToggle";
 import Loading from "./Loading";
 
+// Does the stored session still correspond to a real user? A network failure is
+// not an answer -- only a rejection from the auth server is -- so a flaky
+// connection never throws away a session that is actually fine.
+async function sessionIsLive() {
+  const { error } = await supabase.auth.getUser();
+  return !error || error.name === "AuthRetryableFetchError";
+}
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [booting, setBooting] = useState(true);
@@ -36,6 +44,17 @@ export default function App() {
     const init = async () => {
       const { data } = await supabase.auth.getSession();
 
+      // getSession() only reads localStorage -- it never asks Supabase whether
+      // that identity still exists. A returning visitor whose user was since
+      // deleted (guest cleanup, a wiped auth table) therefore boots "signed in"
+      // holding a token for a user that is gone: the UI looks fine, the refresh
+      // loop retries forever in the console, and every API call comes back 401.
+      // One round trip on boot turns that dead end into a fresh guest session.
+      if (data?.session?.user && !(await sessionIsLive())) {
+        await supabase.auth.signOut({ scope: "local" });
+        data.session = null;
+      }
+
       if (data?.session?.user) {
         if (mounted) {
           setUser(data.session.user);
@@ -53,8 +72,17 @@ export default function App() {
       if (!mounted) return;
 
       if (anonError) {
+        // A failed *fetch* never reached Supabase, so the provider settings are
+        // not the story: the request died in the network (offline, or the auth
+        // endpoint refusing the CORS preflight). Blaming the anon-sign-in
+        // toggle for that sends anyone debugging it to the wrong dashboard page.
+        const unreachable =
+          anonError.name === "AuthRetryableFetchError" && !anonError.status;
+
         setError(
-          `Could not start a session: ${anonError.message}. Is anonymous sign-in enabled in Supabase?`,
+          unreachable
+            ? `Cannot reach the SoundScript service (${anonError.message}). Check your connection and retry.`
+            : `Could not start a session: ${anonError.message}. Is anonymous sign-in enabled in Supabase?`,
         );
       } else {
         setUser(anon.user);
@@ -77,6 +105,10 @@ export default function App() {
   }, []);
 
   const isGuest = user?.is_anonymous === true;
+  // Not simply `!isGuest`: when the session fails to start there is no user at
+  // all, and the header would otherwise offer "Sign out" beside a blank email
+  // -- claiming an account is signed in while nothing on the page works.
+  const signedIn = Boolean(user) && !isGuest;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -218,14 +250,16 @@ export default function App() {
               </button>
             ))}
 
-            {isGuest ? (
+            {isGuest && (
               <button
                 onClick={() => setShowAuth(true)}
                 className="px-4 py-2 rounded-lg text-sm font-semibold bg-gold hover:bg-gold-strong text-on-gold transition"
               >
                 Save my work
               </button>
-            ) : (
+            )}
+
+            {signedIn && (
               <>
                 <span className="text-sm text-soft max-w-40 truncate">
                   {user?.email}
@@ -277,14 +311,16 @@ export default function App() {
               </button>
             ))}
 
-            {isGuest ? (
+            {isGuest && (
               <button
                 onClick={go(() => setShowAuth(true))}
                 className="w-full px-4 py-3 rounded-lg text-base font-semibold bg-gold hover:bg-gold-strong text-on-gold transition mt-1"
               >
                 Save my work
               </button>
-            ) : (
+            )}
+
+            {signedIn && (
               <>
                 <p className="px-4 pt-2 text-sm text-soft truncate">
                   {user?.email}
