@@ -18,9 +18,41 @@ async function sessionIsLive() {
   return !error || error.name === "AuthRetryableFetchError";
 }
 
+// Supabase is the first thing this app talks to -- before a single pixel of the
+// real UI, it asks for an anonymous session -- so any wobble on that one call is
+// what a visitor experiences as a dead site. One attempt cannot tell a cold
+// start from an outage, so try a few times with a growing gap before declaring
+// anything broken.
+async function signInGuestWithRetry(attempts = 3) {
+  let lastError;
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const { data, error } = await supabase.auth.signInAnonymously();
+    if (!error) return { data };
+
+    lastError = error;
+
+    // Only a transport failure is worth repeating. A rejection from the auth
+    // server -- anonymous sign-in switched off, say -- will be rejected just as
+    // fast the second time, and retrying only delays telling the visitor
+    // something they can act on.
+    const retryable = error.name === "AuthRetryableFetchError" && !error.status;
+    if (!retryable) break;
+
+    await new Promise((resolve) => setTimeout(resolve, 1500 * 2 ** attempt));
+  }
+
+  return { error: lastError };
+}
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [booting, setBooting] = useState(true);
+  // Separate from `error` below on purpose: `error` is a transient toast, and a
+  // session that never started is a permanent state that has to survive until
+  // someone retries it.
+  const [sessionError, setSessionError] = useState("");
+  const [bootAttempt, setBootAttempt] = useState(0);
   const [showHistory, setShowHistory] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
@@ -31,6 +63,7 @@ export default function App() {
   const [text, setText] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [waking, setWaking] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -66,8 +99,7 @@ export default function App() {
       // Guests get a real anonymous identity rather than a fake "guest" string,
       // so RLS, history and quotas all work through one code path. They can
       // later attach an email to this same account and keep their history.
-      const { data: anon, error: anonError } =
-        await supabase.auth.signInAnonymously();
+      const { data: anon, error: anonError } = await signInGuestWithRetry();
 
       if (!mounted) return;
 
@@ -76,12 +108,15 @@ export default function App() {
         // not the story: the request died in the network (offline, or the auth
         // endpoint refusing the CORS preflight). Blaming the anon-sign-in
         // toggle for that sends anyone debugging it to the wrong dashboard page.
+        // In practice the usual cause is the free project having been paused
+        // for inactivity -- which no amount of retrying fixes, because a paused
+        // project is woken from the dashboard and nowhere else.
         const unreachable =
           anonError.name === "AuthRetryableFetchError" && !anonError.status;
 
-        setError(
+        setSessionError(
           unreachable
-            ? `Cannot reach the SoundScript service (${anonError.message}). Check your connection and retry.`
+            ? "SoundScript can't reach its database right now. This is usually temporary, so try again in a moment. If it keeps happening, the Supabase project has most likely been paused for inactivity and needs resuming from the dashboard."
             : `Could not start a session: ${anonError.message}. Is anonymous sign-in enabled in Supabase?`,
         );
       } else {
@@ -102,7 +137,7 @@ export default function App() {
       mounted = false;
       listener.subscription.unsubscribe();
     };
-  }, []);
+  }, [bootAttempt]);
 
   const isGuest = user?.is_anonymous === true;
   // Not simply `!isGuest`: when the session fails to start there is no user at
@@ -127,6 +162,14 @@ export default function App() {
 
     setLoading(true);
     setAudioUrl("");
+    setWaking(false);
+
+    // The API sleeps after 15 minutes idle on Render's free plan and takes the
+    // better part of a minute to come back. A bare spinner makes that look like
+    // a hang and people leave. Four seconds is long enough that a warm server
+    // never shows this line, and short enough to explain a cold one before
+    // anyone gives up on it.
+    const wakingTimer = setTimeout(() => setWaking(true), 4000);
 
     try {
       const data = await convertText(text);
@@ -139,9 +182,13 @@ export default function App() {
       );
     } catch (err) {
       toast(err.message || "Error generating audio.", "error");
+    } finally {
+      // finally, not a trailing statement: an early return or a throw from the
+      // toast would otherwise leave the button disabled and the timer live.
+      clearTimeout(wakingTimer);
+      setWaking(false);
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const toast = (msg, type) => {
@@ -162,6 +209,38 @@ export default function App() {
       <>
         {chrome}
         <Loading message="Starting session…" />
+      </>
+    );
+  }
+
+  // A session that never started is a dead end, not a cosmetic problem: every
+  // control below needs a token. Rendering the normal page with a red line
+  // under it invites people to keep clicking things that cannot work, so take
+  // over the screen and offer the one action that might help.
+  if (sessionError) {
+    return (
+      <>
+        {chrome}
+        <div className="min-h-screen flex flex-col items-center justify-center bg-page text-ink px-6 text-center">
+          <h1 className="font-display text-2xl sm:text-3xl mb-3">
+            🔊 SoundScript can’t connect
+          </h1>
+
+          <p className="text-soft max-w-md mb-8 leading-relaxed">
+            {sessionError}
+          </p>
+
+          <button
+            onClick={() => {
+              setSessionError("");
+              setBooting(true);
+              setBootAttempt((n) => n + 1);
+            }}
+            className="px-6 py-3 rounded-xl font-semibold bg-gold hover:bg-gold-strong text-on-gold transition shadow-sm"
+          >
+            Try again
+          </button>
+        </div>
       </>
     );
   }
@@ -375,6 +454,13 @@ export default function App() {
           >
             {loading ? "Narrating…" : "Convert to Speech"}
           </button>
+
+          {loading && waking && (
+            <p className="mt-4 text-soft text-sm">
+              ⏳ Waking the server up — it sleeps when idle on the free plan, so
+              this first one can take up to a minute.
+            </p>
+          )}
 
           {error && <p className="mt-4 text-danger text-sm">❗ {error}</p>}
 

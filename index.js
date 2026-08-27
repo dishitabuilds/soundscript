@@ -106,6 +106,58 @@ app.get("/api/health", async (req, res) => {
   res.json(body);
 });
 
+// Keeps both free plans awake. Render spins a free service down after 15
+// minutes idle, and Supabase pauses a free project after roughly a week with no
+// database requests -- and a paused project cannot be woken by traffic, only by
+// a click in the dashboard. That pause is what takes this site down hardest:
+// the browser asks Supabase for an anonymous session before it renders
+// anything, so a sleeping database shows up as "Cannot reach the SoundScript
+// service" on a page that is otherwise fine.
+//
+// One request here covers both halves. Reaching this process wakes Render, and
+// the select below is a real PostgREST round trip to Postgres, which is the
+// activity Supabase counts. RLS hands an anon caller zero rows and that is the
+// point -- the query still ran, and no data leaves.
+//
+// Deliberately unauthenticated: the caller is a cron job with no session, and
+// the reply carries a boolean and a duration, nothing else.
+app.get("/api/keepalive", async (req, res) => {
+  const startedAt = Date.now();
+
+  try {
+    const { getAuthClient } = require("./lib/supabase");
+    const { error } = await getAuthClient()
+      .from("documents")
+      .select("id")
+      .limit(1);
+
+    // 503 rather than 200-with-a-flag: the cron treats a non-200 as the alert,
+    // and a paused project is exactly the thing worth being loud about.
+    if (error) {
+      console.error("Keepalive: database did not answer:", error.message);
+      return res.status(503).json({
+        ok: false,
+        db: false,
+        error: error.message,
+        code: error.code || null,
+        ms: Date.now() - startedAt,
+      });
+    }
+
+    res.json({ ok: true, db: true, ms: Date.now() - startedAt });
+  } catch (err) {
+    // Missing env vars throw out of requireEnv() rather than returning an
+    // error, so a misconfigured deploy lands here instead of above.
+    console.error("Keepalive failed:", err.message);
+    res.status(503).json({
+      ok: false,
+      db: false,
+      error: err.message,
+      ms: Date.now() - startedAt,
+    });
+  }
+});
+
 app.use("/api/convert", convertRoutes.router);
 app.use("/api/documents", documentRoutes.router);
 app.use("/api/voices", voiceRoutes.router);
