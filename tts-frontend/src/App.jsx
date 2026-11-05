@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Auth from "./Auth";
 import { supabase } from "./supabase";
 import History from "./History";
@@ -43,6 +43,7 @@ export default function App() {
   const [booting, setBooting] = useState(true);
   const [sessionError, setSessionError] = useState(false);
   const [bootAttempt, setBootAttempt] = useState(0);
+  const sessionRequest = useRef(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
@@ -63,15 +64,28 @@ export default function App() {
 
   useEffect(() => {
     let mounted = true;
+    // The auth SDK can retry a cached session refresh across multiple fetches.
+    const deadline = setTimeout(() => {
+      setSessionError(true);
+      setBooting(false);
+    }, 8000);
 
     const init = async () => {
       try {
-        const sessionUser = await startSession();
-        if (mounted) setUser(sessionUser);
+        // Reuse an in-flight attempt so reconnecting cannot create two guests.
+        sessionRequest.current ??= startSession().finally(() => {
+          sessionRequest.current = null;
+        });
+        const sessionUser = await sessionRequest.current;
+        if (mounted) {
+          setUser(sessionUser);
+          setSessionError(false);
+        }
       } catch (err) {
         console.warn("SoundScript session could not start.", err);
         if (mounted) setSessionError(true);
       } finally {
+        clearTimeout(deadline);
         if (mounted) setBooting(false);
       }
     };
@@ -86,6 +100,7 @@ export default function App() {
 
     return () => {
       mounted = false;
+      clearTimeout(deadline);
       listener.subscription.unsubscribe();
     };
   }, [bootAttempt]);
