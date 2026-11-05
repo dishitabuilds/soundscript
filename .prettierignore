@@ -1,6 +1,12 @@
 # Generated or vendored — not ours to format, and reformatting it would produce
 # enormous diffs that hide real changes.
 node_modules/
+.audit/
+ml/.venv/
+ml/.cache/
+ml/models/
+ml/runs/
+ml/data/scifact-reviewed.json
 tts-frontend/node_modules/
 tts-frontend/dist/
 package-lock.json

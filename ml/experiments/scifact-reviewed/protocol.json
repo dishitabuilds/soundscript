@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-04",
+  "dataset": {
+    "dataset": "BEIR SciFact",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://huggingface.co/datasets/BeIR/scifact",
+    "qrels_source": "https://huggingface.co/datasets/BeIR/scifact-qrels",
+    "original_project": "https://github.com/allenai/scifact",
+    "review": "Original authors' human relevance annotations; no new human review claimed.",
+    "passages": 5183,
+    "queries": {
+      "train": 465,
+      "validation": 72,
+      "test": 300
+    },
+    "excluded_overlapping_train_queries": 272,
+    "split_policy": "Original test labels frozen. Remove training queries whose positive documents occur in test; connected positive-document groups choose validation by SHA256 mod 5. Training negatives exclude all held-out documents.",
+    "raw_sha256": {
+      "corpus.json": "3bd9f6323ba8d45788852a081c982e1f4c6ffd78b381ec6f777bbc8fb673dc65",
+      "queries.json": "1a4bf6e0a1e9dceed2bd6cfc467a3fee9ca679720e39e8dd4b734acc8764a849",
+      "qrels.json": "9cf66b04ab9598580a3e54d7cba8980425518c1e19c89193777b91a3dd41a49f"
+    }
+  },
+  "dataset_sha256": "0d1d04ea55fa23165ad8740e746385140d5e401ed256a0b927ea3772e91f93b2",
+  "candidates_sha256": "2577e9ae9862ebeede35afa0b2a79e0277dbfbb90b6d1a176dbd63c18ce15120",
+  "candidate_pool": "BM25 top 20; identical rankings for all rerankers",
+  "max_length": 128,
+  "quantized": true,
+  "selection": "Highest validation nDCG@10 across two BCE checkpoints and one explicit-hard-negative ranking checkpoint. Frozen before tuned test scoring.",
+  "test_queries": 300,
+  "promotion": "Positive lower bound of paired evidence-cluster bootstrap 95% CI in test nDCG@10",
+  "python": "3.10.11",
+  "packages": {
+    "torch": "2.14.1",
+    "sentence-transformers": "6.2.0",
+    "datasets": "5.1.0",
+    "kokoro-onnx": "0.6.1",
+    "onnxruntime": "1.23.2"
+  },
+  "base_model_revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a",
+  "dataset_revisions": {
+    "BeIR/scifact": "b3b5335604bf5ee3c4447671af975ea25143d4f5",
+    "BeIR/scifact-qrels": "2938d17dc3b09882fdb8c12bbbe2e2dc0e75a029"
+  }
+}

@@ -70,6 +70,7 @@ function VoicePicker({ providers, voice, onChange }) {
     <div className="space-y-3">
       <div className="flex flex-wrap gap-3">
         <select
+          aria-label="Speech provider"
           value={provider?.id || ""}
           onChange={(e) => {
             const next = providers.find((p) => p.id === e.target.value);
@@ -82,13 +83,14 @@ function VoicePicker({ providers, voice, onChange }) {
         >
           {providers.map((p) => (
             <option key={p.id} value={p.id} disabled={!p.available}>
-              {p.id === "elevenlabs" ? "ElevenLabs" : "OpenAI"}
-              {p.available ? "" : " (no API key)"}
+              {p.name || p.id}
+              {p.available ? "" : " (not configured)"}
             </option>
           ))}
         </select>
 
         <select
+          aria-label="Narrator voice"
           value={voice.voiceId || provider?.defaultVoiceId || ""}
           onChange={(e) =>
             onChange({
@@ -117,6 +119,9 @@ function VoicePicker({ providers, voice, onChange }) {
       </div>
 
       {sampleUrl && <audio ref={audioRef} src={sampleUrl} className="hidden" />}
+      {provider?.description && (
+        <p className="text-soft text-xs">{provider.description}</p>
+      )}
       {error && <p className="text-danger text-xs">{error}</p>}
     </div>
   );
@@ -138,6 +143,7 @@ export default function Library({ onOpen, onBack }) {
   const [uploading, setUploading] = useState(false);
 
   const fileInput = useRef(null);
+  const quoteId = useRef(0);
 
   const refresh = async () => {
     try {
@@ -167,16 +173,20 @@ export default function Library({ onOpen, onBack }) {
   }, []);
 
   const quote = async (file, chosenVoice) => {
+    const currentQuote = ++quoteId.current;
     setError("");
     setEstimating(true);
     setEstimate(null);
     try {
-      setEstimate(await estimateDocument(file, { voice: chosenVoice }));
+      const next = await estimateDocument(file, { voice: chosenVoice });
+      if (currentQuote === quoteId.current) setEstimate(next);
     } catch (err) {
-      setError(err.message);
-      setPendingFile(null);
+      if (currentQuote === quoteId.current) {
+        setError(err.message);
+        setPendingFile(null);
+      }
     } finally {
-      setEstimating(false);
+      if (currentQuote === quoteId.current) setEstimating(false);
     }
   };
 
@@ -213,6 +223,8 @@ export default function Library({ onOpen, onBack }) {
   };
 
   const cancelUpload = () => {
+    quoteId.current++;
+    setEstimating(false);
     setPendingFile(null);
     setEstimate(null);
     if (fileInput.current) fileInput.current.value = "";
@@ -246,6 +258,15 @@ export default function Library({ onOpen, onBack }) {
 
         {!pendingFile && (
           <div
+            role="button"
+            tabIndex={0}
+            aria-label="Choose a document"
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                fileInput.current?.click();
+              }
+            }}
             onDragOver={(e) => {
               e.preventDefault();
               setDragging(true);
@@ -264,6 +285,7 @@ export default function Library({ onOpen, onBack }) {
             }`}
           >
             <input
+              aria-label="Upload document"
               ref={fileInput}
               type="file"
               accept={ACCEPT}
@@ -328,7 +350,7 @@ export default function Library({ onOpen, onBack }) {
                     </p>
                   </div>
                   <div className="bg-sunken rounded-lg p-3">
-                    <p className="text-soft text-xs">Will bill</p>
+                    <p className="text-soft text-xs">To generate</p>
                     <p className="font-medium tabular-nums">
                       {estimate.billableChars.toLocaleString()} chars
                     </p>

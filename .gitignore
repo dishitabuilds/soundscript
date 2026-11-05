@@ -1,4 +1,12 @@
 node_modules/
+.audit/
+ml/.venv/
+ml/models/
+ml/runs/
+ml/.cache/
+ml/data/scifact-reviewed.json
+__pycache__/
+*.pyc
 
 # OS noise
 .DS_Store
@@ -8,9 +16,8 @@ interview.html
 
 # Secrets. See .env.example for the shape of each.
 .env
-.env.local
-tts-frontend/.env
-tts-frontend/.env.local
+.env.*
+!.env.example
 
 # Build output
 tts-frontend/dist/

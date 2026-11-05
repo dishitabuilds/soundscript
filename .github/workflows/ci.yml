@@ -13,6 +13,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  retrieval-evaluation:
+    name: Retrieval evaluation contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: python -m unittest discover -s ml -p 'test_*.py'
+      - run: python ml/evaluate.py --lexical-only --output ml/runs/lexical.json
+
   backend:
     name: Backend tests
     runs-on: ubuntu-latest
@@ -42,6 +53,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Audit runtime dependencies
+        run: npm audit --omit=dev --audit-level=high
+
   frontend:
     name: Frontend lint and build
     runs-on: ubuntu-latest
@@ -63,6 +77,12 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Test API client
+        run: npm test
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
 
       # Placeholder values: the build only bundles these, it never dials out.
       # Real ones would add nothing and would put credentials in CI logs.

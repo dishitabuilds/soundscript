@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js",
+    "dev": "node --watch index.js",
     "worker": "node worker.js",
     "test": "node --test test/*.test.js",
     "verify:schema": "node scripts/verify-schema.js"
@@ -15,12 +15,14 @@
   "license": "ISC",
   "type": "commonjs",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.13.0"
   },
   "dependencies": {
-    "@napi-rs/canvas": "^0.1.100",
+    "@ai-sdk/openai": "^4.0.108",
+    "@napi-rs/canvas": "^1.1.0",
     "@supabase/supabase-js": "^2.86.0",
     "adm-zip": "^0.6.0",
+    "ai": "^7.0.162",
     "axios": "^1.13.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -35,7 +37,11 @@
   "optionalDependencies": {
     "tesseract.js": "^6.0.1"
   },
+  "overrides": {
+    "qs": "^6.16.2"
+  },
   "devDependencies": {
-    "nodemon": "^3.1.11"
+    "@electric-sql/pglite": "^0.5.15",
+    "@electric-sql/pglite-pgvector": "^0.0.16"
   }
 }

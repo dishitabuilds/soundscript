@@ -9,4 +9,20 @@ if (!url || !anonKey) {
   );
 }
 
-export const supabase = createClient(url, anonKey);
+const authOrigin = new URL("/auth/v1/", url).href;
+
+export const supabase = createClient(url, anonKey, {
+  global: {
+    fetch(input, init) {
+      // Bound auth requests without timing out document or audio transfers.
+      if (typeof input === "string" && input.startsWith(authOrigin)) {
+        const timeout = AbortSignal.timeout(8000);
+        const signal = init?.signal
+          ? AbortSignal.any([init.signal, timeout])
+          : timeout;
+        return fetch(input, { ...init, signal });
+      }
+      return fetch(input, init);
+    },
+  },
+});

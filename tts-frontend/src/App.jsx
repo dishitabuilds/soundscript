@@ -8,50 +8,40 @@ import Settings from "./Settings";
 import { convertText } from "./api";
 import { useTheme } from "./theme";
 import ThemeToggle from "./ThemeToggle";
-import Loading from "./Loading";
 
-// Does the stored session still correspond to a real user? A network failure is
-// not an answer -- only a rejection from the auth server is -- so a flaky
-// connection never throws away a session that is actually fine.
-async function sessionIsLive() {
-  const { error } = await supabase.auth.getUser();
-  return !error || error.name === "AuthRetryableFetchError";
-}
+async function startSession() {
+  const { data, error } = await supabase.auth.getSession();
+  if (error?.name === "AuthRetryableFetchError") throw error;
 
-// Supabase is the first thing this app talks to -- before a single pixel of the
-// real UI, it asks for an anonymous session -- so any wobble on that one call is
-// what a visitor experiences as a dead site. One attempt cannot tell a cold
-// start from an outage, so try a few times with a growing gap before declaring
-// anything broken.
-async function signInGuestWithRetry(attempts = 3) {
-  let lastError;
+  if (data?.session?.user) {
+    const { data: verified, error: verifyError } = await supabase.auth.getUser(
+      data.session.access_token,
+    );
+    if (!verifyError) return verified.user;
 
-  for (let attempt = 0; attempt < attempts; attempt++) {
-    const { data, error } = await supabase.auth.signInAnonymously();
-    if (!error) return { data };
-
-    lastError = error;
-
-    // Only a transport failure is worth repeating. A rejection from the auth
-    // server -- anonymous sign-in switched off, say -- will be rejected just as
-    // fast the second time, and retrying only delays telling the visitor
-    // something they can act on.
-    const retryable = error.name === "AuthRetryableFetchError" && !error.status;
-    if (!retryable) break;
-
-    await new Promise((resolve) => setTimeout(resolve, 1500 * 2 ** attempt));
+    // Keep the stored session when verification fails for a transient reason.
+    if (
+      ![401, 403, 404].includes(verifyError.status) &&
+      verifyError.name !== "AuthSessionMissingError"
+    ) {
+      throw verifyError;
+    }
+    const { error: signOutError } = await supabase.auth.signOut({
+      scope: "local",
+    });
+    if (signOutError) throw signOutError;
   }
 
-  return { error: lastError };
+  const { data: guest, error: guestError } =
+    await supabase.auth.signInAnonymously();
+  if (guestError) throw guestError;
+  return guest.user;
 }
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [booting, setBooting] = useState(true);
-  // Separate from `error` below on purpose: `error` is a transient toast, and a
-  // session that never started is a permanent state that has to survive until
-  // someone retries it.
-  const [sessionError, setSessionError] = useState("");
+  const [sessionError, setSessionError] = useState(false);
   const [bootAttempt, setBootAttempt] = useState(0);
   const [showHistory, setShowHistory] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
@@ -75,54 +65,15 @@ export default function App() {
     let mounted = true;
 
     const init = async () => {
-      const { data } = await supabase.auth.getSession();
-
-      // getSession() only reads localStorage -- it never asks Supabase whether
-      // that identity still exists. A returning visitor whose user was since
-      // deleted (guest cleanup, a wiped auth table) therefore boots "signed in"
-      // holding a token for a user that is gone: the UI looks fine, the refresh
-      // loop retries forever in the console, and every API call comes back 401.
-      // One round trip on boot turns that dead end into a fresh guest session.
-      if (data?.session?.user && !(await sessionIsLive())) {
-        await supabase.auth.signOut({ scope: "local" });
-        data.session = null;
+      try {
+        const sessionUser = await startSession();
+        if (mounted) setUser(sessionUser);
+      } catch (err) {
+        console.warn("SoundScript session could not start.", err);
+        if (mounted) setSessionError(true);
+      } finally {
+        if (mounted) setBooting(false);
       }
-
-      if (data?.session?.user) {
-        if (mounted) {
-          setUser(data.session.user);
-          setBooting(false);
-        }
-        return;
-      }
-
-      // Guests get a real anonymous identity rather than a fake "guest" string,
-      // so RLS, history and quotas all work through one code path. They can
-      // later attach an email to this same account and keep their history.
-      const { data: anon, error: anonError } = await signInGuestWithRetry();
-
-      if (!mounted) return;
-
-      if (anonError) {
-        // A failed *fetch* never reached Supabase, so the provider settings are
-        // not the story: the request died in the network (offline, or the auth
-        // endpoint refusing the CORS preflight). Blaming the anon-sign-in
-        // toggle for that sends anyone debugging it to the wrong dashboard page.
-        // In practice the usual cause is the free project having been paused
-        // for inactivity -- which no amount of retrying fixes, because a paused
-        // project is woken from the dashboard and nowhere else.
-        const unreachable =
-          anonError.name === "AuthRetryableFetchError" && !anonError.status;
-
-        setSessionError(
-          unreachable
-            ? "SoundScript can't reach its database right now. This is usually temporary, so try again in a moment. If it keeps happening, the Supabase project has most likely been paused for inactivity and needs resuming from the dashboard."
-            : `Could not start a session: ${anonError.message}. Is anonymous sign-in enabled in Supabase?`,
-        );
-      } else {
-        setUser(anon.user);
-      }
-      setBooting(false);
     };
 
     init();
@@ -139,11 +90,9 @@ export default function App() {
     };
   }, [bootAttempt]);
 
-  const isGuest = user?.is_anonymous === true;
-  // Not simply `!isGuest`: when the session fails to start there is no user at
-  // all, and the header would otherwise offer "Sign out" beside a blank email
-  // -- claiming an account is signed in while nothing on the page works.
-  const signedIn = Boolean(user) && !isGuest;
+  const sessionReady = Boolean(user) && !booting && !sessionError;
+  const isGuest = sessionReady && user.is_anonymous === true;
+  const signedIn = sessionReady && !isGuest;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -203,47 +152,6 @@ export default function App() {
 
   // Every view shares the toggle, so it is mounted once out here.
   const chrome = <ThemeToggle dark={dark} onToggle={toggle} />;
-
-  if (booting) {
-    return (
-      <>
-        {chrome}
-        <Loading message="Starting session…" />
-      </>
-    );
-  }
-
-  // A session that never started is a dead end, not a cosmetic problem: every
-  // control below needs a token. Rendering the normal page with a red line
-  // under it invites people to keep clicking things that cannot work, so take
-  // over the screen and offer the one action that might help.
-  if (sessionError) {
-    return (
-      <>
-        {chrome}
-        <div className="min-h-screen flex flex-col items-center justify-center bg-page text-ink px-6 text-center">
-          <h1 className="font-display text-2xl sm:text-3xl mb-3">
-            🔊 SoundScript can’t connect
-          </h1>
-
-          <p className="text-soft max-w-md mb-8 leading-relaxed">
-            {sessionError}
-          </p>
-
-          <button
-            onClick={() => {
-              setSessionError("");
-              setBooting(true);
-              setBootAttempt((n) => n + 1);
-            }}
-            className="px-6 py-3 rounded-xl font-semibold bg-gold hover:bg-gold-strong text-on-gold transition shadow-sm"
-          >
-            Try again
-          </button>
-        </div>
-      </>
-    );
-  }
 
   // Nav destinations, shared between the desktop bar and the mobile drawer so
   // the two can never drift apart.
@@ -323,7 +231,8 @@ export default function App() {
               <button
                 key={link.label}
                 onClick={link.onClick}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-ink hover:bg-sunken border border-transparent hover:border-line transition"
+                disabled={!sessionReady}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-ink hover:bg-sunken border border-transparent hover:border-line transition disabled:opacity-50"
               >
                 {link.label}
               </button>
@@ -384,7 +293,8 @@ export default function App() {
               <button
                 key={link.label}
                 onClick={link.onClick}
-                className="w-full text-left px-4 py-3 rounded-lg text-base font-medium text-ink hover:bg-sunken transition"
+                disabled={!sessionReady}
+                className="w-full text-left px-4 py-3 rounded-lg text-base font-medium text-ink hover:bg-sunken transition disabled:opacity-50"
               >
                 {link.label}
               </button>
@@ -426,7 +336,8 @@ export default function App() {
           Got a whole document?{" "}
           <button
             onClick={() => setShowLibrary(true)}
-            className="text-gold hover:text-gold-strong underline underline-offset-2"
+            disabled={!sessionReady}
+            className="text-gold hover:text-gold-strong underline underline-offset-2 disabled:opacity-50"
           >
             Turn it into an audiobook
           </button>{" "}
@@ -434,6 +345,32 @@ export default function App() {
         </p>
 
         <div className="w-full max-w-3xl bg-surface p-6 sm:p-10 rounded-2xl border border-line shadow-sm">
+          {!sessionReady && (
+            <div className="mb-5 flex flex-wrap items-center gap-2 text-sm">
+              <p
+                role="status"
+                className={booting ? "text-soft" : "text-danger"}
+              >
+                {booting
+                  ? "Connecting to SoundScript… You can enter your text now."
+                  : "SoundScript couldn’t start a session. Try reconnecting."}
+              </p>
+              {!booting && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSessionError(false);
+                    setBooting(true);
+                    setBootAttempt((n) => n + 1);
+                  }}
+                  className="text-gold hover:text-gold-strong underline underline-offset-2"
+                >
+                  Try again
+                </button>
+              )}
+            </div>
+          )}
+
           <label className="text-lg font-medium">Enter your text</label>
 
           <textarea
@@ -449,7 +386,7 @@ export default function App() {
 
           <button
             onClick={handleConvert}
-            disabled={loading}
+            disabled={loading || !sessionReady}
             className="w-full py-4 mt-6 rounded-xl text-lg font-semibold bg-gold hover:bg-gold-strong text-on-gold transition shadow-sm disabled:opacity-50"
           >
             {loading ? "Narrating…" : "Convert to Speech"}

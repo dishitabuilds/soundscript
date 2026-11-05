@@ -113,14 +113,14 @@ file ──► extract ──► clean ──► rules ──► chunk ──►
 
 | Layer                         | Choice                                                                  |
 | ----------------------------- | ----------------------------------------------------------------------- |
-| **Backend**                   | Node.js 22+, Express (CommonJS)                                         |
+| **Backend**                   | Node.js 22.13+, Express (CommonJS)                                      |
 | **Frontend**                  | React 19, Vite, Tailwind CSS                                            |
 | **Database / Auth / Storage** | Supabase (Postgres + Row-Level Security + Auth + Storage)               |
 | **Text-to-speech**            | ElevenLabs (primary), OpenAI (optional) — behind a provider abstraction |
 | **Audio**                     | ffmpeg / ffprobe (static binaries) for stitching + measuring            |
 | **PDF / EPUB / DOCX / OCR**   | pdfjs-dist + @napi-rs/canvas, adm-zip + fast-xml-parser, tesseract.js   |
 | **Deploy / CI**               | Render (Blueprint), GitHub Actions                                      |
-| **Tests / quality**           | `node:test` (100 tests), ESLint, Prettier                               |
+| **Tests / quality**           | `node:test` (170 tests), ESLint, Prettier                               |
 
 ## Project structure
 
@@ -137,7 +137,7 @@ file ──► extract ──► clean ──► rules ──► chunk ──►
 │   ├── worker/              # the concurrent worker pool
 │   ├── auth.js  supabase.js quota.js events.js feed.js notify.js
 ├── supabase/migrations/     # schema, RLS policies, RPCs, storage buckets
-├── test/                    # 100 unit tests (node:test), in-memory fixtures
+├── test/                    # 170 backend tests (node:test), in-memory fixtures
 ├── tts-frontend/            # React + Vite + Tailwind single-page app
 ├── render.yaml              # Render Blueprint: deploys API + web together
 └── DEPLOY.md                # step-by-step deployment runbook
@@ -145,7 +145,7 @@ file ──► extract ──► clean ──► rules ──► chunk ──►
 
 ## Getting started
 
-**Prerequisites:** Node 22+, a Supabase project, and an ElevenLabs (or OpenAI) API key.
+**Prerequisites:** Node 22.13+, a Supabase project, and an ElevenLabs (or OpenAI) API key.
 
 ```bash
 # 1. Backend
@@ -192,7 +192,7 @@ Full step-by-step in **[DEPLOY.md](DEPLOY.md)**.
 ## Testing
 
 ```bash
-npm test                      # 100 unit tests, no credentials needed
+npm test                      # 170 backend tests, no credentials needed
 ```
 
 Covers the chunker, sentence boundaries, PDF cleaning, EPUB/DOCX extraction,
@@ -227,3 +227,39 @@ Built by [**dishita**](https://github.com/dishitabuilds) ·
 [Live demo](https://soundscript-web.onrender.com)
 
 </div>
+
+## Verification and safe testing
+
+The optional AI study assistant adds document retrieval, source citations and
+audio links, retrieval ablations, and a trainable cross-encoder reranker. See the
+[setup, evaluation, and fine-tuning guide](docs/ai-study-assistant.md). It is
+disabled until its database migration and model service are configured.
+
+For speech without monthly provider credits, use the [free local Kokoro provider
+and automatic quota fallback](docs/free-speech.md). The larger ranking experiment
+uses author-reviewed SciFact relevance annotations with disjoint evidence-document
+splits; see [the reviewed benchmark workflow](docs/reviewed-ranking.md).
+
+The evaluated 128-token CPU profile improves test nDCG@10 from 0.6209 to 0.6942
+through query-based sentence selection. Fine-tuning alone was inconclusive.
+The [full experiment record](ml/experiments/scifact-reviewed/README.md) preserves
+the comparisons and limits; the application's 512-token default needs its own
+evaluation before replacement.
+
+See [architecture review](docs/architecture-review.md) and [verification report](docs/verification-report.md) for evidence and remaining production blockers.
+
+```bash
+npm test                       # 170 backend tests; providers and Supabase mocked
+cd tts-frontend
+npm test                       # 8 browser API-client tests, no network
+npm run lint
+npm run build
+```
+
+`node scripts/browser-fixture.js` starts the real local UI/API with disposable in-memory storage and synthetic speech at `http://127.0.0.1:5176`. It never loads `.env` or uses real credentials. Use it for repeatable browser checks.
+
+`node scripts/verify-elevenlabs.js` performs read-only account, subscription, voice and model checks against ElevenLabs using the existing `ELEVEN_API_KEY`; it never generates speech or prints credentials. The other `verify-*` scripts may write real database rows or spend credits and must not be run as routine unit tests.
+
+Keep `.env` and its variants untracked; only `.env.example` templates belong in Git. Do not put provider keys or service-role keys in `VITE_*` variables. Use `npm ci` with both committed lockfiles to retain the audited dependency versions.
+
+PDF uploads are limited to 250 pages; OCR renders are limited to 32 million pixels per page. EPUB/DOCX archives are limited to 2,048 entries, 8 MiB per expanded entry and 64 MiB total. FFmpeg and FFprobe come from platform-specific npm packages; do not omit optional packages, because PDF rendering also needs its native canvas binding. OCR requires an English model download on first use and stores trained data in the OS temporary directory.

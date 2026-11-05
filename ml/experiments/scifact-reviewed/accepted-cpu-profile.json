@@ -1,0 +1,12 @@
+{
+  "model": "cross-encoder/ms-marco-MiniLM-L6-v2",
+  "revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a",
+  "context": "sentences",
+  "max_length": 128,
+  "quantize": true,
+  "dataset_sha256": "0d1d04ea55fa23165ad8740e746385140d5e401ed256a0b927ea3772e91f93b2",
+  "candidates_sha256": "2577e9ae9862ebeede35afa0b2a79e0277dbfbb90b6d1a176dbd63c18ce15120",
+  "promotion_passed": true,
+  "test_ndcg_delta": 0.0732563607535947,
+  "test_ci": [0.034431464892384654, 0.11423776119363215]
+}

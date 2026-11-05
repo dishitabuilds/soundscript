@@ -3,18 +3,18 @@
 Two pieces ship together from this repo via [render.yaml](render.yaml): the
 **API** (a persistent Node service) and the **web** frontend (a static Vite
 build). This runbook covers the steps that can only happen in your accounts —
-the code is already deploy-ready.
+review the [verification report](docs/verification-report.md) before considering this production-ready.
 
 ## 0. Prerequisites
 
 - A GitHub account, a Render account, and a Supabase project (the same one you
   linked locally, or a fresh production project).
-- An ElevenLabs API key and/or an OpenAI API key.
+- At least one speech provider. For quota fallback, use ElevenLabs with a
+  reachable [Kokoro service](docs/free-speech.md).
 
 ## 1. Put the repo on GitHub
 
-There is no git remote yet, so Render has nothing to connect to. Create an
-empty repo on GitHub, then:
+If the repository has no remote, create an empty repository in your account, then:
 
 ```bash
 git remote add origin https://github.com/<you>/soundscript.git
@@ -45,14 +45,27 @@ In Render: **New → Blueprint**, pick the GitHub repo. Render reads
 
 | Key                         | Value                                                     |
 | --------------------------- | --------------------------------------------------------- |
-| `SUPABASE_URL`              | your project URL                                          |
-| `SUPABASE_ANON_KEY`         | anon key                                                  |
-| `ELEVEN_API_KEY`            | ElevenLabs key (optional if using OpenAI)                 |
-| `OPENAI_API_KEY`            | OpenAI key (optional; also the ElevenLabs-quota fallback) |
-| `SUPABASE_SERVICE_ROLE_KEY` | only if you want the podcast feed                         |
+| `SUPABASE_URL`              | Production project URL                                    |
+| `SUPABASE_ANON_KEY`         | Production anon key                                       |
+| `ELEVEN_API_KEY`            | ElevenLabs key                                            |
+| `OPENAI_API_KEY`            | Optional OpenAI speech and generated answers              |
+| `SUPABASE_SERVICE_ROLE_KEY` | Optional podcast feed                                     |
+| `KOKORO_URL`                | HTTPS URL of the deployed Kokoro speech service           |
+| `KOKORO_SERVICE_TOKEN`      | Token matching the Kokoro service                         |
+| `TTS_PROVIDER`              | `auto` to fall back from ElevenLabs quota to Kokoro       |
+| `RAG_ENABLED`               | `true` after applying the document RAG migration          |
+| `RAG_MODEL_URL`             | Optional HTTPS URL of the embedding and reranking service |
+| `RAG_MODEL_TOKEN`           | Token matching the model service                          |
+| `RAG_ANSWER_MODEL`          | Optional answer model to use with the OpenAI key          |
 
 `ALLOWED_ORIGINS` is already set in `render.yaml` to this deployment's web
 origin, so there is nothing to fill in for it.
+
+The Blueprint deploys the web and API. Deploy the optional Python services
+separately and configure their URLs on the API. The API uses lexical search
+with source excerpts when RAG is enabled and the model URL is unset.
+See the [study assistant setup](docs/ai-study-assistant.md) and
+[validated CPU profile](docs/reviewed-ranking.md) for the model service.
 
 ### `soundscript-web` env vars
 
@@ -73,14 +86,15 @@ browser will get a CORS error. With the default names, there is nothing to do.
 
 ## 5. Verify
 
-- `https://soundscript-api.onrender.com/api/health` → `{"ok":true, ...}`. Check
-  which providers/features it reports as enabled.
+- `https://soundscript-api-55nk.onrender.com/api/health` → `{"ok":true, ...}`. Check
+  the `revision` and enabled features. Add `?debug=1` to check whether Supabase Auth answers.
 - Open the web URL, upload a small document, confirm it narrates end to end.
 
 ## Notes & gotchas
 
 - **Free-plan cold starts.** Render's free web service sleeps after inactivity;
-  the first request wakes it (~30s). Fine for a demo, upgrade for real traffic.
+  the first API request can take about a minute. The static web page renders
+  while the browser connects to Supabase Auth.
 - **In-process synthesis.** By default the API synthesises in-process
   (`INLINE_PROCESSING` unset). Work in flight is lost if the free instance
   sleeps or restarts mid-job; `POST /api/documents/:id/process` requeues it. For
@@ -91,6 +105,5 @@ browser will get a CORS error. With the default names, there is nothing to do.
   package that `--omit=optional` would strip), so `tesseract.js` installs too.
   Its ~10MB trained-data model downloads the first time a scanned PDF is
   processed, not at build time.
-- **ElevenLabs free tier is 10,000 characters/month.** When it's exhausted,
-  synthesis fails with a clear "monthly quota reached" message. Set
-  `OPENAI_API_KEY` and pick an OpenAI voice to keep going.
+- **ElevenLabs quota.** With a deployed Kokoro service and the `auto` provider,
+  synthesis falls back to Kokoro when ElevenLabs returns a quota error.

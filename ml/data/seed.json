@@ -1,0 +1,279 @@
+{
+  "description": "Original hand-authored smoke-test corpus, not a hiring-quality benchmark. Splits are by source document.",
+  "documents": [
+    {
+      "id": "regularization",
+      "split": "train",
+      "passages": [
+        {
+          "id": "reg-1",
+          "text": "Regularization discourages overly complex models by adding a penalty to the training objective. L2 regularization penalizes squared weights. It can reduce overfitting, but excessive regularization causes underfitting."
+        },
+        {
+          "id": "reg-2",
+          "text": "A learning rate controls how far an optimizer moves on each update. A very large learning rate may make training unstable. A very small rate can make convergence slow."
+        }
+      ],
+      "questions": [
+        {
+          "id": "q-reg-1",
+          "question": "How does an L2 penalty reduce model overfitting?",
+          "relevant": ["reg-1"]
+        },
+        {
+          "id": "q-reg-2",
+          "question": "What can go wrong when the optimizer takes steps that are too large?",
+          "relevant": ["reg-2"]
+        }
+      ]
+    },
+    {
+      "id": "splits",
+      "split": "train",
+      "passages": [
+        {
+          "id": "split-1",
+          "text": "Training data is used to fit model parameters. Validation data is used to choose hyperparameters. The test set is reserved for final evaluation after model selection."
+        },
+        {
+          "id": "split-2",
+          "text": "Data leakage happens when information unavailable at prediction time influences training or model selection. Related passages from one document should remain in the same split to avoid leakage."
+        }
+      ],
+      "questions": [
+        {
+          "id": "q-split-1",
+          "question": "Which dataset should select hyperparameters?",
+          "relevant": ["split-1"]
+        },
+        {
+          "id": "q-split-2",
+          "question": "Why keep paragraphs from a single source together when splitting data?",
+          "relevant": ["split-2"]
+        }
+      ]
+    },
+    {
+      "id": "embeddings",
+      "split": "train",
+      "passages": [
+        {
+          "id": "emb-1",
+          "text": "An embedding maps text to a numeric vector. Semantic retrieval compares a question vector with stored passage vectors, allowing related wording to match even without identical keywords."
+        },
+        {
+          "id": "emb-2",
+          "text": "Cosine similarity measures the angle between vectors. For unit-normalized embeddings, the dot product equals cosine similarity. Vectors from different embedding models should not be mixed."
+        }
+      ],
+      "questions": [
+        {
+          "id": "q-emb-1",
+          "question": "How can search match passages that use different words?",
+          "relevant": ["emb-1"]
+        },
+        {
+          "id": "q-emb-2",
+          "question": "When does a dot product equal cosine similarity?",
+          "relevant": ["emb-2"]
+        }
+      ]
+    },
+    {
+      "id": "retrieval",
+      "split": "train",
+      "passages": [
+        {
+          "id": "ret-1",
+          "text": "Hybrid retrieval combines keyword matches and semantic vector matches. Reciprocal rank fusion combines their ranked lists using the sum of one divided by a smoothing constant plus each rank."
+        },
+        {
+          "id": "ret-2",
+          "text": "A cross-encoder reranker reads the question and a candidate passage together. It scores relevance after initial retrieval. Reranking cannot recover a relevant passage missing from the candidate set."
+        }
+      ],
+      "questions": [
+        {
+          "id": "q-ret-1",
+          "question": "How can keyword and semantic result rankings be combined?",
+          "relevant": ["ret-1"]
+        },
+        {
+          "id": "q-ret-2",
+          "question": "Can a reranker recover evidence that initial search did not retrieve?",
+          "relevant": ["ret-2"]
+        }
+      ]
+    },
+    {
+      "id": "metrics",
+      "split": "train",
+      "passages": [
+        {
+          "id": "metric-1",
+          "text": "Recall at k measures the fraction of relevant passages retrieved in the first k results. Mean reciprocal rank averages the inverse rank of the first relevant result across questions."
+        },
+        {
+          "id": "metric-2",
+          "text": "Precision measures how many predicted positives are correct. Recall measures how many actual positives are recovered. A classifier threshold controls the tradeoff between false positives and false negatives."
+        }
+      ],
+      "questions": [
+        {
+          "id": "q-metric-1",
+          "question": "What metric rewards placing the first useful search result near the top?",
+          "relevant": ["metric-1"]
+        },
+        {
+          "id": "q-metric-2",
+          "question": "What changes the balance between false alarms and missed positives?",
+          "relevant": ["metric-2"]
+        }
+      ]
+    },
+    {
+      "id": "queues",
+      "split": "train",
+      "passages": [
+        {
+          "id": "queue-1",
+          "text": "A durable job queue stores pending work in a database. Workers claim jobs with row locks. SKIP LOCKED lets concurrent workers claim different unlocked rows instead of waiting for one busy row."
+        },
+        {
+          "id": "queue-2",
+          "text": "Retries should distinguish temporary failures from permanent errors. Exponential backoff increases the delay between attempts. Jitter spreads retries to avoid synchronized request bursts."
+        }
+      ],
+      "questions": [
+        {
+          "id": "q-queue-1",
+          "question": "How do multiple workers avoid waiting on the same locked job?",
+          "relevant": ["queue-1"]
+        },
+        {
+          "id": "q-queue-2",
+          "question": "Why add randomness to retry delays?",
+          "relevant": ["queue-2"]
+        }
+      ]
+    },
+    {
+      "id": "ocr",
+      "split": "validation",
+      "passages": [
+        {
+          "id": "ocr-1",
+          "text": "Optical character recognition converts page images to text. A scanned PDF may need OCR because it contains no text layer. Recognition errors can damage both narration and document retrieval."
+        },
+        {
+          "id": "ocr-2",
+          "text": "An OCR quality classifier can flag pages for human review using recognition confidence, unusual character frequency, and word statistics. A low confidence score alone is not a calibrated probability that a page is incorrect."
+        }
+      ],
+      "questions": [
+        {
+          "id": "q-ocr-1",
+          "question": "Why does a scanned document need an extra extraction step?",
+          "relevant": ["ocr-1"]
+        },
+        {
+          "id": "q-ocr-2",
+          "question": "Which signals could flag an unreadable page for review?",
+          "relevant": ["ocr-2"]
+        }
+      ]
+    },
+    {
+      "id": "cache",
+      "split": "validation",
+      "passages": [
+        {
+          "id": "cache-1",
+          "text": "A content-addressed audio cache hashes the provider, model, voice, and spoken text. A change to pronunciation changes the text and therefore the cache key."
+        },
+        {
+          "id": "cache-2",
+          "text": "A cache scoped to a user avoids revealing that another user has narrated the same content. A global cache requires a separate privacy analysis."
+        }
+      ],
+      "questions": [
+        {
+          "id": "q-cache-1",
+          "question": "Why should correcting pronunciation invalidate cached speech?",
+          "relevant": ["cache-1"]
+        },
+        {
+          "id": "q-cache-2",
+          "question": "How does a private cache avoid leaking other users' activity?",
+          "relevant": ["cache-2"]
+        }
+      ]
+    },
+    {
+      "id": "dropout",
+      "split": "test",
+      "passages": [
+        {
+          "id": "drop-1",
+          "text": "Dropout randomly disables some activations during neural network training. This reduces reliance on particular activations and can improve generalization. Dropout is disabled during ordinary inference."
+        },
+        {
+          "id": "drop-2",
+          "text": "Early stopping monitors validation performance and ends training when improvement stalls. The selected checkpoint should be chosen using validation data rather than the final test set."
+        }
+      ],
+      "questions": [
+        {
+          "id": "q-drop-1",
+          "question": "Is random activation masking used when serving a trained network?",
+          "relevant": ["drop-1"]
+        },
+        {
+          "id": "q-drop-2",
+          "question": "What determines when early stopping should end training?",
+          "relevant": ["drop-2"]
+        }
+      ]
+    },
+    {
+      "id": "rls",
+      "split": "test",
+      "passages": [
+        {
+          "id": "rls-1",
+          "text": "Row level security enforces database access policies for each row. A document search query should run with the authenticated user's identity so it returns only passages they own."
+        },
+        {
+          "id": "rls-2",
+          "text": "A service role key bypasses row level security. It belongs in trusted server processes and should never be placed in a browser bundle or used for user-scoped retrieval."
+        }
+      ],
+      "questions": [
+        {
+          "id": "q-rls-1",
+          "question": "How can document search restrict evidence to the signed-in owner?",
+          "relevant": ["rls-1"]
+        },
+        {
+          "id": "q-rls-2",
+          "question": "Why is an administrative database credential unsuitable for browser search?",
+          "relevant": ["rls-2"]
+        }
+      ]
+    }
+  ],
+  "unanswerable": [
+    {
+      "id": "q-unknown-1",
+      "question": "What is the author's telephone number?",
+      "split": "test",
+      "relevant": []
+    },
+    {
+      "id": "q-unknown-2",
+      "question": "What was the exact cost of training these models?",
+      "split": "test",
+      "relevant": []
+    }
+  ]
+}

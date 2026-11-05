@@ -1,0 +1,165 @@
+{
+  "dataset_sha256": "81c2f51c8baec58896bd12da21d1a19674181a777abe414e09df86f435c24279",
+  "split": "test",
+  "questions": 4,
+  "corpus_passages": 20,
+  "reranker": "cross-encoder/ms-marco-MiniLM-L6-v2",
+  "summary": {
+    "bm25": {
+      "recall@5": 1.0,
+      "mrr@5": 0.6875,
+      "ndcg@5": 0.7654015779112127
+    },
+    "hybrid": {
+      "recall@5": 1.0,
+      "mrr@5": 0.875,
+      "ndcg@5": 0.9077324383928644
+    },
+    "hybrid_reranked": {
+      "recall@5": 1.0,
+      "mrr@5": 0.875,
+      "ndcg@5": 0.9077324383928644
+    },
+    "semantic": {
+      "recall@5": 1.0,
+      "mrr@5": 0.875,
+      "ndcg@5": 0.9077324383928644
+    }
+  },
+  "results": [
+    {
+      "question_id": "q-drop-1",
+      "method": "bm25",
+      "recall@5": 1.0,
+      "mrr@5": 0.5,
+      "ndcg@5": 0.6309297535714575,
+      "top5": ["split-1", "drop-1", "ocr-2", "rls-2", "drop-2"]
+    },
+    {
+      "question_id": "q-drop-1",
+      "method": "semantic",
+      "recall@5": 1.0,
+      "mrr@5": 1.0,
+      "ndcg@5": 1.0,
+      "top5": ["drop-1", "split-2", "cache-2", "reg-1", "cache-1"]
+    },
+    {
+      "question_id": "q-drop-1",
+      "method": "hybrid",
+      "recall@5": 1.0,
+      "mrr@5": 1.0,
+      "ndcg@5": 1.0,
+      "top5": ["drop-1", "split-2", "cache-2", "split-1", "rls-2"]
+    },
+    {
+      "question_id": "q-drop-1",
+      "method": "hybrid_reranked",
+      "recall@5": 1.0,
+      "mrr@5": 1.0,
+      "ndcg@5": 1.0,
+      "top5": ["drop-1", "split-1", "drop-2", "split-2", "reg-2"]
+    },
+    {
+      "question_id": "q-drop-2",
+      "method": "bm25",
+      "recall@5": 1.0,
+      "mrr@5": 1.0,
+      "ndcg@5": 1.0,
+      "top5": ["drop-2", "split-2", "queue-2", "drop-1", "split-1"]
+    },
+    {
+      "question_id": "q-drop-2",
+      "method": "semantic",
+      "recall@5": 1.0,
+      "mrr@5": 1.0,
+      "ndcg@5": 1.0,
+      "top5": ["drop-2", "reg-2", "drop-1", "split-1", "reg-1"]
+    },
+    {
+      "question_id": "q-drop-2",
+      "method": "hybrid",
+      "recall@5": 1.0,
+      "mrr@5": 1.0,
+      "ndcg@5": 1.0,
+      "top5": ["drop-2", "drop-1", "split-2", "queue-2", "split-1"]
+    },
+    {
+      "question_id": "q-drop-2",
+      "method": "hybrid_reranked",
+      "recall@5": 1.0,
+      "mrr@5": 1.0,
+      "ndcg@5": 1.0,
+      "top5": ["drop-2", "split-2", "reg-2", "drop-1", "reg-1"]
+    },
+    {
+      "question_id": "q-rls-1",
+      "method": "bm25",
+      "recall@5": 1.0,
+      "mrr@5": 1.0,
+      "ndcg@5": 1.0,
+      "top5": ["rls-1", "split-2", "ocr-1", "reg-2", "metric-2"]
+    },
+    {
+      "question_id": "q-rls-1",
+      "method": "semantic",
+      "recall@5": 1.0,
+      "mrr@5": 1.0,
+      "ndcg@5": 1.0,
+      "top5": ["rls-1", "cache-2", "ocr-1", "ocr-2", "ret-1"]
+    },
+    {
+      "question_id": "q-rls-1",
+      "method": "hybrid",
+      "recall@5": 1.0,
+      "mrr@5": 1.0,
+      "ndcg@5": 1.0,
+      "top5": ["rls-1", "ocr-1", "split-2", "cache-2", "rls-2"]
+    },
+    {
+      "question_id": "q-rls-1",
+      "method": "hybrid_reranked",
+      "recall@5": 1.0,
+      "mrr@5": 1.0,
+      "ndcg@5": 1.0,
+      "top5": ["rls-1", "ret-2", "split-2", "cache-2", "ocr-1"]
+    },
+    {
+      "question_id": "q-rls-2",
+      "method": "bm25",
+      "recall@5": 1.0,
+      "mrr@5": 0.25,
+      "ndcg@5": 0.43067655807339306,
+      "top5": ["rls-1", "ocr-2", "split-1", "rls-2", "queue-1"]
+    },
+    {
+      "question_id": "q-rls-2",
+      "method": "semantic",
+      "recall@5": 1.0,
+      "mrr@5": 0.5,
+      "ndcg@5": 0.6309297535714575,
+      "top5": ["rls-1", "rls-2", "cache-2", "cache-1", "split-1"]
+    },
+    {
+      "question_id": "q-rls-2",
+      "method": "hybrid",
+      "recall@5": 1.0,
+      "mrr@5": 0.5,
+      "ndcg@5": 0.6309297535714575,
+      "top5": ["rls-1", "rls-2", "split-1", "ocr-2", "queue-1"]
+    },
+    {
+      "question_id": "q-rls-2",
+      "method": "hybrid_reranked",
+      "recall@5": 1.0,
+      "mrr@5": 0.5,
+      "ndcg@5": 0.6309297535714575,
+      "top5": ["rls-1", "rls-2", "ocr-1", "ret-2", "cache-2"]
+    }
+  ],
+  "limitations": [
+    "Tiny hand-authored seed: smoke test only.",
+    "Offline BM25 differs from production Postgres full-text search.",
+    "Ranking metrics exclude unanswerable questions and do not measure factuality or citation support.",
+    "Elapsed times include all ablations; they are not production latency measurements."
+  ]
+}

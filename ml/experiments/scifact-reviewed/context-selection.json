@@ -1,0 +1,14 @@
+{
+  "date": "2026-11-05",
+  "selected_model": "cross-encoder/ms-marco-MiniLM-L6-v2",
+  "context": "sentences",
+  "max_length": 128,
+  "quantized": true,
+  "selection_metric": "validation nDCG@10",
+  "pretrained_focused_validation": 0.7027806326907003,
+  "tuned_focused_validation": 0.7004873670400205,
+  "test_comparisons": 2,
+  "confidence_adjustment": "Bonferroni adjustment across prefix fine-tuning and sentence-context pipeline comparisons",
+  "scope": "Opt-in 128-token CPU profile; does not replace the unmeasured 512-token application default",
+  "reason": "Selected on validation before focused-context test evaluation. Original fine-tuning test did not establish improvement."
+}

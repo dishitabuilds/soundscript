@@ -1,0 +1,19 @@
+{
+  "base_model": "cross-encoder/ms-marco-MiniLM-L6-v2",
+  "dataset_sha256": "81c2f51c8baec58896bd12da21d1a19674181a777abe414e09df86f435c24279",
+  "seed": 42,
+  "epochs": 1,
+  "training_pairs": 48,
+  "validation_pairs": 16,
+  "train_documents": [
+    "regularization",
+    "splits",
+    "embeddings",
+    "retrieval",
+    "metrics",
+    "queues"
+  ],
+  "validation_documents": ["ocr", "cache"],
+  "negative_mining": "BM25 within each split; up to 3 negatives per query",
+  "warning": "Seed-data smoke training only. Evaluate on larger held-out documents before production use."
+}

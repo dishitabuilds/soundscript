@@ -1,0 +1,32 @@
+{
+  "selected": {
+    "name": "hard-negative-ranking",
+    "file": "ml/runs/scifact-ranking-validation.json",
+    "model": "ml/models/scifact-reranker-hardneg",
+    "ndcg": 0.6631661472174488
+  },
+  "candidates": [
+    {
+      "name": "hard-negative-ranking",
+      "file": "ml/runs/scifact-ranking-validation.json",
+      "model": "ml/models/scifact-reranker-hardneg",
+      "ndcg": 0.6631661472174488
+    },
+    {
+      "name": "bce-epoch2",
+      "file": "ml/runs/scifact-epoch2-validation.json",
+      "model": "ml/models/scifact-reranker-cpu",
+      "ndcg": 0.6616340564582953
+    },
+    {
+      "name": "bce-epoch1",
+      "file": "ml/runs/scifact-epoch1-validation.json",
+      "model": "ml/models/scifact-reranker-cpu/checkpoints/checkpoint-181",
+      "ndcg": 0.6579875638075902
+    }
+  ],
+  "pretrained_validation_ndcg": 0.663334500245214,
+  "validation_delta": -0.000168353027765189,
+  "selection": "Highest validation nDCG@10 among trained checkpoints. Candidate fixed before tuned test evaluation.",
+  "date": "2026-11-05"
+}

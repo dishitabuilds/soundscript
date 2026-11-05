@@ -1,0 +1,27 @@
+{
+  "queries": 300,
+  "split": "test",
+  "metric": "ndcg@10",
+  "baseline": {
+    "ndcg@10": 0.6209274516889117,
+    "mrr@10": 0.5844894179894179,
+    "recall@5": 0.6936666666666667,
+    "recall@30": 0.8325555555555555
+  },
+  "tuned": {
+    "ndcg@10": 0.6218326182679647,
+    "mrr@10": 0.5865449735449734,
+    "recall@5": 0.6903333333333334,
+    "recall@30": 0.8325555555555555
+  },
+  "mean_delta": 0.0009051665790527585,
+  "evidence_clusters": 247,
+  "paired_cluster_bootstrap_95_ci": [
+    -0.004721212938382495, 0.006576616102605879
+  ],
+  "wins": 7,
+  "ties": 288,
+  "losses": 5,
+  "promotion_passed": false,
+  "interpretation": "Promotion requires a positive lower bound of the paired bootstrap CI on the frozen test set. Claims sharing evidence documents are resampled together. This domain result does not establish in-app generalization."
+}

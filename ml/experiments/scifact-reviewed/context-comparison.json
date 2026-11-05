@@ -1,0 +1,31 @@
+{
+  "queries": 300,
+  "split": "test",
+  "metric": "ndcg@10",
+  "baseline_context": "prefix",
+  "tuned_context": "sentences",
+  "context_changed": true,
+  "baseline": {
+    "ndcg@10": 0.6209274516889117,
+    "mrr@10": 0.5844894179894179,
+    "recall@5": 0.6936666666666667,
+    "recall@30": 0.8325555555555555
+  },
+  "tuned": {
+    "ndcg@10": 0.6941838124425069,
+    "mrr@10": 0.6653915343915344,
+    "recall@5": 0.7525555555555555,
+    "recall@30": 0.8325555555555555
+  },
+  "mean_delta": 0.0732563607535947,
+  "evidence_clusters": 247,
+  "paired_cluster_bootstrap_95_ci": [0.038978436728910354, 0.10851345098967657],
+  "wins": 69,
+  "ties": 188,
+  "losses": 43,
+  "comparisons": 2,
+  "promotion_confidence_level": 0.975,
+  "promotion_interval": [0.034431464892384654, 0.11423776119363215],
+  "promotion_passed": true,
+  "interpretation": "Promotion requires a positive lower bound on the test bootstrap interval, adjusted for the declared number of comparisons. Claims sharing evidence are resampled together. Context-policy changes are pipeline gains, not isolated fine-tuning gains."
+}

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoundScript — Complete Developer Guide</title>
+<style>
+  :root{
+    --mahogany:#5b1a16; --mahogany-soft:#7a2a24; --gold:#9a6f0e; --gold-strong:#7d5a0b;
+    --green:#3a6a42; --ink:#2b2420; --soft:#6b625b; --line:#e6ddd2; --page:#fbf7f1;
+    --surface:#ffffff; --sunken:#f4ece1; --code-bg:#2b2420; --code-ink:#f4ece1;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    color:var(--ink); background:var(--page); margin:0; line-height:1.62; font-size:16px;
+  }
+  .wrap{max-width:900px; margin:0 auto; padding:56px 40px 96px;}
+  h1,h2,h3,h4{font-family:"Trebuchet MS","Segoe UI",Helvetica,Arial,sans-serif; line-height:1.25; color:var(--mahogany);}
+  h1{font-size:2.6rem; margin:0 0 6px; letter-spacing:.5px;}
+  h2{font-size:1.7rem; margin:2.6em 0 .5em; padding-bottom:.25em; border-bottom:3px solid var(--gold); color:var(--mahogany);}
+  h3{font-size:1.25rem; margin:1.8em 0 .4em; color:var(--mahogany-soft);}
+  h4{font-size:1.02rem; margin:1.3em 0 .3em; color:var(--gold-strong); text-transform:uppercase; letter-spacing:.06em;}
+  p{margin:.6em 0;}
+  a{color:var(--gold-strong); text-decoration:none;}
+  code{font-family:"SFMono-Regular",Consolas,"Roboto Mono",monospace; font-size:.86em; background:var(--sunken); padding:.1em .38em; border-radius:5px; color:var(--mahogany);}
+  pre{background:var(--code-bg); color:var(--code-ink); padding:16px 18px; border-radius:10px; overflow-x:auto; font-size:.82rem; line-height:1.5; margin:1em 0;}
+  pre code{background:none; color:inherit; padding:0; font-size:1em;}
+  ul,ol{margin:.5em 0 .9em; padding-left:1.4em;}
+  li{margin:.28em 0;}
+  table{width:100%; border-collapse:collapse; margin:1.1em 0; font-size:.9rem;}
+  th,td{text-align:left; padding:9px 12px; border:1px solid var(--line); vertical-align:top;}
+  th{background:var(--mahogany); color:#fdf6e9; font-family:"Trebuchet MS","Segoe UI",sans-serif; font-weight:600;}
+  tr:nth-child(even) td{background:var(--sunken);}
+  .lede{font-size:1.14rem; color:var(--soft); margin:0 0 8px;}
+  .tag{display:inline-block; background:var(--sunken); border:1px solid var(--line); color:var(--gold-strong); font-family:"Trebuchet MS",sans-serif; font-size:.72rem; padding:2px 9px; border-radius:20px; margin:2px 4px 2px 0;}
+  .callout{background:var(--sunken); border-left:5px solid var(--gold); padding:12px 18px; border-radius:0 10px 10px 0; margin:1.2em 0;}
+  .callout.warn{border-left-color:var(--mahogany); }
+  .callout.q{border-left-color:var(--green); background:#eef4ee;}
+  .cover{background:linear-gradient(135deg,var(--mahogany),#3d100d); color:#fdf6e9; border-radius:16px; padding:52px 44px; margin-bottom:8px;}
+  .cover h1{color:#fdf6e9;}
+  .cover .lede{color:#f0d9b0;}
+  .cover .meta{margin-top:22px; font-family:"Trebuchet MS",sans-serif; font-size:.85rem; color:#e9cfa2;}
+  .toc{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:20px 28px; margin:26px 0;}
+  .toc h2{border:none; margin:.2em 0 .5em; font-size:1.2rem;}
+  .toc ol{columns:2; column-gap:34px; font-family:"Trebuchet MS","Segoe UI",sans-serif; font-size:.9rem;}
+  .toc a{color:var(--ink);}
+  .qa h3{background:var(--sunken); padding:10px 14px; border-radius:8px; font-size:1.05rem; border-left:4px solid var(--gold);}
+  .pipeline{font-family:"SFMono-Regular",Consolas,monospace; font-size:.8rem; background:var(--sunken); border:1px solid var(--line); border-radius:10px; padding:16px; overflow-x:auto; white-space:pre; line-height:1.45;}
+  .footer{margin-top:60px; padding-top:18px; border-top:1px solid var(--line); color:var(--soft); font-size:.85rem; text-align:center;}
+  .kbd{font-family:"Trebuchet MS",sans-serif; font-size:.72rem; background:var(--mahogany); color:#fff; padding:2px 8px; border-radius:5px;}
+  @media print{
+    body{background:#fff; font-size:11.5px;}
+    .wrap{max-width:none; padding:0;}
+    h2{break-after:avoid; page-break-after:avoid;}
+    h3,h4{break-after:avoid;}
+    pre,table,.callout,.pipeline{break-inside:avoid;}
+    .cover{break-after:page;}
+    .toc{break-after:page; columns:2;}
+    a{color:var(--ink);}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="cover">
+  <h1>SoundScript</h1>
+  <p class="lede">The Complete Developer Guide — everything about how the project is built, why, and how to explain it.</p>
+  <p>Turn any document into a narrated audiobook — with chapters, read-along highlighting, and a private podcast feed.</p>
+  <div class="meta">
+    Live demo: soundscript-web.onrender.com &nbsp;·&nbsp; Stack: Node 22 · Express · React 19 · Supabase · ElevenLabs · Render<br>
+    A teaching reference for the developer — architecture, pipeline, deployment, and interview preparation.
+  </div>
+</div>
+
+<div class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#overview">What SoundScript is</a></li>
+    <li><a href="#mental-model">The core mental model</a></li>
+    <li><a href="#features">Every feature, explained</a></li>
+    <li><a href="#navigate-web">Navigating the website</a></li>
+    <li><a href="#navigate-app">Navigating the app (views)</a></li>
+    <li><a href="#howitworks">How it works: the pipeline</a></li>
+    <li><a href="#lifecycle">Request lifecycle, end to end</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#datamodel">Data model &amp; the queue</a></li>
+    <li><a href="#api">The API surface</a></li>
+    <li><a href="#stack">Tech stack &amp; why each choice</a></li>
+    <li><a href="#auth">Auth, security &amp; RLS</a></li>
+    <li><a href="#caching">Caching, quotas &amp; cost control</a></li>
+    <li><a href="#tts">The TTS provider abstraction</a></li>
+    <li><a href="#frontend">Frontend architecture</a></li>
+    <li><a href="#testing">Testing &amp; CI</a></li>
+    <li><a href="#deploy">Deployment (Render)</a></li>
+    <li><a href="#decisions">Design decisions to be able to defend</a></li>
+    <li><a href="#limits">Known limits &amp; future work</a></li>
+    <li><a href="#qa-project">Interview Q&amp;A — this project</a></li>
+    <li><a href="#qa-general">Interview Q&amp;A — general tech</a></li>
+    <li><a href="#cheatsheet">One-minute cheat sheet</a></li>
+  </ol>
+</div>
+
+<h2 id="overview">1 · What SoundScript is</h2>
+<p class="lede">A document-to-audiobook platform.</p>
+<p>A user uploads a <strong>PDF, EPUB, DOCX, Markdown, or plain-text file</strong> (or pastes a short passage) and gets back a single MP3 narrated in a natural voice — with pauses in the right places, clickable chapters, read-along highlighting that tracks the spoken sentence, cross-device resume, and an optional private podcast feed they can subscribe to in any podcast app.</p>
+<p>The single most important thing to understand — and the line that frames every design decision — is this:</p>
+<div class="callout">
+<strong>The text-to-speech API call is one line in the middle of the system. Everything that makes the result usable happens on either side of it.</strong> A raw PDF has no paragraphs, repeats its running header on every page, and hyphenates words across line breaks. TTS APIs cap input length and bill per character. Synthesis is slow. So SoundScript is really a <strong>document-processing and job-orchestration pipeline that happens to end in audio</strong> — not a thin wrapper around an API.
+</div>
+<p>Framing it this way in an interview immediately signals that you understand where the real engineering is: format detection, text cleaning, chunking, a concurrent job queue, caching, and audio stitching — not the <code>synthesize()</code> call itself.</p>
+
+<h2 id="mental-model">2 · The core mental model</h2>
+<p>Hold three ideas and the whole codebase falls into place:</p>
+<ol>
+<li><strong>It is a pipeline.</strong> Text flows through fixed stages: <em>extract → clean → apply pronunciation rules → chunk → queue → synthesize (workers) → stitch → audiobook.</em> Each stage is one module with one job.</li>
+<li><strong>The database is the queue.</strong> There is no Redis, no RabbitMQ. The <code>chunks</code> table <em>is</em> the work queue, and Postgres row locking (<code>FOR UPDATE SKIP LOCKED</code>) is what lets many workers pull from it safely.</li>
+<li><strong>Identity is enforced by the database, not the app.</strong> Every request carries a Supabase JWT; the user id comes from the verified token, and Postgres Row-Level Security (RLS) guarantees a user can only ever touch their own rows — even if the API code had a bug.</li>
+</ol>
+
+<h2 id="features">3 · Every feature, explained</h2>
+<table>
+<tr><th>Feature</th><th>What it does &amp; why it matters</th></tr>
+<tr><td><strong>Multi-format ingest</strong></td><td>Accepts PDF, EPUB, DOCX, TXT, Markdown. Format is detected from the file's <em>own bytes</em> (magic numbers), never the extension or the client-supplied MIME type — both of which are trivially spoofed.</td></tr>
+<tr><td><strong>Scanned-PDF OCR</strong></td><td>If a PDF has no text layer, it falls back to Tesseract OCR (<code>tesseract.js</code>). Best-effort, English by default; the ~10 MB model downloads on first use.</td></tr>
+<tr><td><strong>Smart cleaning</strong></td><td>For PDFs: strips running headers/footers (found by cross-page repetition), removes page numbers, de-hyphenates words split across lines, and rebuilds paragraphs the PDF never actually had.</td></tr>
+<tr><td><strong>Cost estimate first</strong></td><td>Before committing, the app quotes chunk count, cache hits, and <em>billable</em> characters, and refuses if it would blow your daily quota. The estimate and the real upload run the same parsing code, so the quoted price can never drift from the charged price.</td></tr>
+<tr><td><strong>Voice picker + preview</strong></td><td>Choose a provider (ElevenLabs / OpenAI) and voice, and hear a short sample before committing to a whole document.</td></tr>
+<tr><td><strong>Chaptered audiobook</strong></td><td>Measured pauses — 0.35 s between sentences, 0.75 s between paragraphs — and every paragraph becomes a clickable chapter with a real timestamp.</td></tr>
+<tr><td><strong>Read-along</strong></td><td>The sentence currently being spoken is highlighted in step with playback; click any sentence to jump the audio there.</td></tr>
+<tr><td><strong>Real player</strong></td><td>Variable playback speed (0.75×–2×), ±15 s skip, and cross-device resume (your position is saved server-side).</td></tr>
+<tr><td><strong>Pronunciation rules</strong></td><td>Per-user find→replace pairs (e.g. <code>"RLS" → "R L S"</code>) applied <em>before</em> synthesis so initialisms and names are spoken correctly.</td></tr>
+<tr><td><strong>Private podcast feed</strong></td><td>Subscribe to your own library as an RSS feed in any podcast app, via a secret, rotatable token URL.</td></tr>
+<tr><td><strong>Live progress</strong></td><td>An animated "pipeline theater" driven by <em>real</em> server-sent events (SSE) — every number is genuine, not a fake spinner.</td></tr>
+<tr><td><strong>Guests + accounts</strong></td><td>Use it instantly as an anonymous guest; attach an email later and keep all your history on the same account.</td></tr>
+<tr><td><strong>Light / dark themes</strong></td><td>A "Mahogany Library" palette with a persisted theme toggle; fully responsive with a mobile drawer nav.</td></tr>
+</table>
+
+<h2 id="navigate-web">4 · Navigating the website</h2>
+<p>The public product lives at two URLs (both on Render's free tier):</p>
+<ul>
+<li><strong>Web app</strong> — <code>https://soundscript-web.onrender.com</code> (the React single-page app the user interacts with).</li>
+<li><strong>API</strong> — <code>https://soundscript-api-…onrender.com</code> (the Node/Express backend; you rarely visit it directly except <code>/api/health</code>).</li>
+</ul>
+<div class="callout warn"><strong>Cold-start note.</strong> On the free plan the API sleeps after inactivity, so the very first request of the day can take ~30–50 seconds to wake the server. This is normal free-tier behaviour, not a bug — it's worth mentioning in an interview as a known trade-off you chose deliberately for a zero-cost demo.</div>
+<p><strong>First visit flow:</strong> open the web URL → you are signed in <em>anonymously and automatically</em> (no login wall) → you land on the home screen with a text box. From there you either paste a short passage and convert it directly, or click <em>"Turn it into an audiobook"</em> to open the Library and upload a full document.</p>
+
+<h2 id="navigate-app">5 · Navigating the app (the views)</h2>
+<p>The frontend is a single-page app with no client-side router — navigation is state-driven inside <code>App.jsx</code>, which conditionally renders one "view" at a time. The persistent chrome is a top nav bar (desktop) / hamburger drawer (mobile) plus a floating theme toggle visible everywhere. The destinations are:</p>
+<table>
+<tr><th>View</th><th>Component</th><th>What you do there</th></tr>
+<tr><td><strong>Home</strong></td><td><code>App.jsx</code></td><td>Paste up to 500 characters of text and convert it to speech instantly. Shows an inline audio player + download link. This is the "quick" path.</td></tr>
+<tr><td><strong>Library</strong></td><td><code>Library.jsx</code></td><td>The document workflow. Upload a PDF/EPUB/DOCX/TXT, pick a voice (with preview), see the <em>cost estimate</em>, confirm, then watch it process. Lists all your documents; open or delete them.</td></tr>
+<tr><td><strong>Document view</strong></td><td><code>DocumentView.jsx</code></td><td>The audiobook player: play/pause, speed control, ±15 s skip, chapter list, and read-along text that highlights the current sentence and lets you click to jump. Also where a failed job can be retried.</td></tr>
+<tr><td><strong>Pipeline theater</strong></td><td><code>PipelineTheater.jsx</code></td><td>The live progress screen shown while a document synthesizes — stages light up from real SSE events; per-chunk cells fill in as each chunk finishes.</td></tr>
+<tr><td><strong>History</strong></td><td><code>History.jsx</code></td><td>Your past single-shot text conversions (read directly from Supabase under RLS).</td></tr>
+<tr><td><strong>Settings</strong></td><td><code>Settings.jsx</code></td><td>Manage pronunciation rules (add/delete find→replace pairs) and your private podcast feed URL (view / copy / rotate the token).</td></tr>
+<tr><td><strong>Auth</strong></td><td><code>Auth.jsx</code></td><td>"Save my work" — attach an email + password to your anonymous account (keeps the same user id and all history), or sign into an existing account.</td></tr>
+</table>
+<p><strong>Guest → account nuance worth knowing:</strong> upgrading a guest calls <code>supabase.auth.updateUser()</code> (attaches credentials to the <em>existing</em> anonymous uid, so history is preserved). Calling <code>signUp()</code> instead would mint a brand-new uid and silently orphan everything the guest had done — a subtle bug the code deliberately avoids.</p>
+
+<h2 id="howitworks">6 · How it works: the pipeline</h2>
+<div class="pipeline">file ──► extract ──► clean ──► rules ──► chunk ──► queue ──► workers ──► stitch ──► audiobook
+       (per format) (pdf only)(per user)  (fit cap) (postgres)  (N par.)   (ffmpeg)</div>
+<table>
+<tr><th>Stage</th><th>Module</th><th>What it does</th></tr>
+<tr><td><strong>Extract</strong></td><td><code>lib/extract/</code></td><td>Detects format from magic bytes, then extracts text: PDF via pdfjs (paragraphs inferred from baseline gaps), EPUB via spine walk, DOCX via paragraph runs, TXT/MD directly, or OCR fallback for scanned PDFs.</td></tr>
+<tr><td><strong>Clean</strong></td><td><code>lib/text/clean.js</code></td><td>PDF-only heuristics: drop headers/footers found by repetition across ≥50% of pages, strip page-number lines, de-hyphenate, rejoin wrapped lines into real paragraphs.</td></tr>
+<tr><td><strong>Rules</strong></td><td><code>lib/text/pronounce.js</code></td><td>Applies the user's find→replace rules <em>before</em> hashing, so corrected text caches under its own key. Longest pattern first; each rule runs once (no cascading).</td></tr>
+<tr><td><strong>Chunk</strong></td><td><code>lib/text/chunker.js</code></td><td>Splits text to fit the API's character cap, preferring boundaries in order: paragraph → sentence → clause → word, only descending when the level above won't fit. Keeps paragraph position so stitching knows where the long pauses go.</td></tr>
+<tr><td><strong>Queue</strong></td><td><code>supabase/migrations</code></td><td>The <code>chunks</code> table <em>is</em> the queue. <code>claim_next_chunk()</code> uses <code>FOR UPDATE SKIP LOCKED</code> so concurrent workers never grab the same row twice.</td></tr>
+<tr><td><strong>Workers</strong></td><td><code>lib/worker/pool.js</code></td><td>N workers pull from the shared queue, synthesize (with retry + jittered backoff), write audio to storage, and populate the cache.</td></tr>
+<tr><td><strong>Stitch</strong></td><td><code>lib/audio/stitch.js</code></td><td>Concatenates chunk audio with inserted silence (0.35 s / 0.75 s), re-encodes to one clean MP3 via ffmpeg, and emits chapter timestamps + a per-chunk timeline for read-along.</td></tr>
+</table>
+
+<h4>Why sentence detection is its own module</h4>
+<p>Splitting on <code>/[.!?]\s/</code> is wrong in ways you hear instantly: "Dr. Smith" becomes two sentences with a pause after "Dr", and "3.14" becomes "3." and "14". <code>lib/text/sentences.js</code> carries an abbreviation set (titles, academic refs) and number handling so boundaries land where a human would put them.</p>
+
+<h4>Why the chunker descends through boundary levels</h4>
+<p>Where a split lands is <em>audible</em>. Break mid-sentence and the narration hits a wall and restarts. So the chunker tries to keep whole paragraphs together; if a paragraph exceeds the cap it splits at sentences; if a sentence is still too big it splits at clauses (after commas/semicolons); and only for a pathological single "word" longer than the whole budget (a URL or hash) does it hard-split inside a token.</p>
+
+<h4>Why stitching re-encodes instead of copying bytes</h4>
+<p>The ffmpeg <code>concat</code> demuxer requires every input to share codec parameters. A raw <code>-c copy</code> would paste mismatched frames together into a file that <em>plays wrong rather than failing loudly</em> the moment a different voice, model, or an older cache entry is mixed in. Re-encoding normalizes everything to 128 k mono 44.1 kHz — costing seconds against minutes of synthesis. Chapter timestamps are also measured from the <em>real</em> encoded lengths (silence included), because guessing from character counts drifts within a page.</p>
+
+<h2 id="lifecycle">7 · Request lifecycle, end to end</h2>
+<p>Follow a document upload from click to playback:</p>
+<ol>
+<li><strong>Browser → API.</strong> <code>Library.jsx</code> POSTs the file (multipart) to <code>/api/documents</code> with a <code>Bearer</code> JWT. First it POSTs with <code>estimate=1</code> to get the cost quote; on confirm it POSTs for real.</li>
+<li><strong>Auth.</strong> <code>requireAuth</code> verifies the JWT with Supabase, sets <code>req.user</code> from the <em>verified token</em>, and builds a user-scoped Supabase client so every DB call runs under that user's RLS.</li>
+<li><strong>Parse.</strong> The buffer goes to <code>lib/extract</code> (format from bytes) → clean → pronunciation rules → chunk. The estimate and real path share this exact code.</li>
+<li><strong>Quota check.</strong> <code>lib/quota.js</code> sums billable characters in the last 24 h; if the new job would exceed <code>DAILY_CHAR_QUOTA</code>, it's refused before any API call.</li>
+<li><strong>Persist.</strong> A <code>documents</code> row is created, then <code>chunks</code> rows are inserted (each with its content hash, paragraph index, and "ends paragraph" flag). Cache hits are marked immediately. The original file is stored in the private bucket only after everything else succeeds.</li>
+<li><strong>Queue a job.</strong> A <code>jobs</code> row is inserted as <code>queued</code>. In the default in-process mode the API starts the worker pool right away (after responding, so a slow first chunk can't delay the HTTP response); with <code>INLINE_PROCESSING=false</code> the standalone <code>worker.js</code> picks it up instead.</li>
+<li><strong>Synthesize.</strong> <code>processDocument</code> atomically claims the job, reads the document's voice once, and runs N workers. Each pulls a chunk via <code>claim_next_chunk</code>, checks the cache, synthesizes with retry, uploads the MP3, writes the cache, marks the chunk done, and <code>publish()</code>es an SSE event.</li>
+<li><strong>Stream progress.</strong> The browser holds open <code>GET /api/documents/:id/events</code> (SSE over <code>fetch</code>, so it can send the auth header). <code>PipelineTheater.jsx</code> renders each event live.</li>
+<li><strong>Stitch.</strong> Once every chunk is done, <code>assembleDocument</code> downloads the pieces and <code>stitchChunks</code> produces the final MP3 + chapters + timeline, stored as an <code>audio_assets</code> row.</li>
+<li><strong>Playback.</strong> <code>DocumentView.jsx</code> requests a short-lived <em>signed URL</em> for the private audio object and plays it, syncing highlight and resume position against the timeline.</li>
+</ol>
+
+<h2 id="architecture">8 · Architecture</h2>
+<div class="pipeline">┌────────────────┐      ┌─────────────────────┐      ┌────────────────────────┐
+│  Web (React)   │ ───► │  API (Node/Express) │ ───► │  Supabase              │
+│  static Vite   │ ◄─── │  extract · chunk    │      │  Postgres + RLS        │
+│  build         │ SSE  │  queue · workers    │      │  Auth (JWT, anon)      │
+└──────┬─────────┘      │  stitch (ffmpeg)    │      │  Storage (private)     │
+       │ auth           └──────────┬──────────┘      └────────────────────────┘
+       └──────────────────────►    │ synthesise
+                                    ▼
+                        ┌─────────────────────┐
+                        │ ElevenLabs / OpenAI │
+                        └─────────────────────┘</div>
+<p><strong>Two deployable pieces, plus Supabase as the backing platform:</strong></p>
+<ul>
+<li><strong>Web</strong> — a static Vite build. Talks to Supabase <em>directly</em> for auth, and to the API for everything else. No server of its own; it's just files on a CDN.</li>
+<li><strong>API</strong> — a <em>persistent</em> Node process (crucially <strong>not serverless</strong>). A 40-page chapter takes minutes to synthesize; the API returns a job id instantly and keeps working in the background while streaming progress over long-lived SSE connections.</li>
+<li><strong>Supabase</strong> — Postgres (holds the work queue and enforces RLS), Auth (JWT + anonymous sign-in), and Storage (a private bucket for audio, served via short-lived signed URLs).</li>
+</ul>
+<div class="callout warn"><strong>Why not serverless?</strong> This is a favourite interview question and the <code>render.yaml</code> comments call it out explicitly. Serverless functions are killed once the HTTP response is sent — which would end every synthesis job at the moment it started, and would sever every open SSE stream. A persistent process keeps the worker pool <em>and</em> the event stream alive for the whole job. That single constraint is the reason the deploy target is a persistent service.</div>
+
+<h2 id="datamodel">9 · Data model &amp; the queue</h2>
+<p>All state lives in Postgres (via Supabase migrations). The important tables:</p>
+<table>
+<tr><th>Table</th><th>Purpose</th></tr>
+<tr><td><code>documents</code></td><td>One row per uploaded document: title, source type, and the chosen voice (<code>provider</code>, <code>voice_id</code>, <code>model_id</code>). The document row owns the narrator.</td></tr>
+<tr><td><code>chunks</code></td><td><strong>This is the queue.</strong> One row per text chunk: text, <code>content_hash</code>, <code>idx</code>, <code>paragraph_idx</code>, <code>status</code> (pending/processing/done/failed), <code>attempts</code>, <code>from_cache</code>, and the audio <code>path</code>.</td></tr>
+<tr><td><code>jobs</code></td><td>One row per synthesis run of a document: <code>queued → running → succeeded/failed</code>, with timestamps used by the stale-work reaper.</td></tr>
+<tr><td><code>audio_cache</code></td><td>Content-addressed cache: <code>(user_id, content_hash) → storage path</code>. A cache hit means zero API cost.</td></tr>
+<tr><td><code>audio_assets</code></td><td>The finished stitched audiobook: path, duration, byte size, per document.</td></tr>
+<tr><td><code>tts_conversions</code></td><td>Single-shot text conversions (the Home path + History view).</td></tr>
+<tr><td><code>listening_positions</code></td><td>Saved playback position per document, enabling cross-device resume.</td></tr>
+<tr><td><code>pronunciation_rules</code></td><td>Per-user find→replace pairs.</td></tr>
+<tr><td><code>user_feeds</code></td><td>The secret token for each user's private podcast feed URL.</td></tr>
+</table>
+<h4>The two key stored procedures (RPCs)</h4>
+<p><code>claim_next_chunk(document_id)</code> — selects the next pending chunk <code>FOR UPDATE SKIP LOCKED</code> and flips it to <code>processing</code> atomically. <em>Skip locked</em> is the whole trick: two workers asking at the same instant get <em>different</em> rows rather than blocking or double-claiming.</p>
+<p><code>document_progress(document_id)</code> — counts chunk rows by status. Progress is <strong>derived, not counted</strong>: it queries the rows rather than incrementing a column, because a counter and the rows it summarizes drift apart the first time something fails or retries.</p>
+
+<h2 id="api">10 · The API surface</h2>
+<p>Every route below <code>/api</code> requires a Bearer JWT (via <code>requireAuth</code>). The public podcast feed is the one exception — it authenticates with the token embedded in its URL, because podcast apps can't send auth headers.</p>
+<table>
+<tr><th>Method &amp; path</th><th>Purpose</th></tr>
+<tr><td><code>GET /api/health</code></td><td>Reports which keys/features are configured (elevenlabs, openai, supabase, ocr, feeds, inlineProcessing). Lets you diagnose a bad deploy without reading logs.</td></tr>
+<tr><td><code>POST /api/convert</code></td><td>Single-shot synthesis of ≤500 chars. Rate-limited per IP.</td></tr>
+<tr><td><code>POST /api/documents</code></td><td>Upload a document (multipart). With <code>estimate=1</code> returns a cost quote and writes nothing; otherwise creates the document, chunks, and queues a job.</td></tr>
+<tr><td><code>GET /api/documents</code> · <code>GET /api/documents/:id</code></td><td>List documents / fetch one with its status &amp; asset.</td></tr>
+<tr><td><code>GET /api/documents/:id/text</code></td><td>Chunk text in reading order, for the read-along view.</td></tr>
+<tr><td><code>GET /api/documents/:id/events</code></td><td>SSE stream of live progress for a job.</td></tr>
+<tr><td><code>PUT /api/documents/:id/position</code></td><td>Save playback position (cross-device resume).</td></tr>
+<tr><td><code>POST /api/documents/:id/process</code></td><td>Requeue / retry a document (the recovery path after a crash).</td></tr>
+<tr><td><code>DELETE /api/documents/:id</code></td><td>Delete a document and its objects.</td></tr>
+<tr><td><code>GET /api/voices</code> · <code>POST /api/voices/preview</code></td><td>List providers/voices; return a short spoken sample.</td></tr>
+<tr><td><code>GET/POST/DELETE /api/pronunciations</code></td><td>Manage pronunciation rules.</td></tr>
+<tr><td><code>GET /api/feed</code> · <code>POST /api/feed/rotate</code></td><td>Get the private feed URL; rotate its token (revokes the old one).</td></tr>
+<tr><td><code>GET /feeds/:token</code></td><td><em>Public</em> RSS endpoint for podcast apps.</td></tr>
+</table>
+
+<h2 id="stack">11 · Tech stack &amp; why each choice</h2>
+<table>
+<tr><th>Layer</th><th>Choice</th><th>Why this, and not the alternative</th></tr>
+<tr><td>Backend</td><td>Node.js 22+, Express (CommonJS)</td><td>The whole job is I/O — HTTP to TTS providers, DB calls, file streaming — which is exactly what Node's event loop is best at. Express is minimal and well-understood. Node 22 specifically because <code>@supabase/supabase-js</code> v2.86 needs a native WebSocket that Node only ships from 22 onward (on 20 it throws at startup).</td></tr>
+<tr><td>Frontend</td><td>React 19, Vite, Tailwind</td><td>Vite gives instant dev startup and a tiny static production bundle (no server needed). Tailwind keeps styling co-located with markup so the whole SPA stays a handful of files. React's state model fits the "one view at a time" navigation without a router.</td></tr>
+<tr><td>DB / Auth / Storage</td><td>Supabase (Postgres + RLS + Auth + Storage)</td><td>One platform gives a real relational DB, JWT auth (including anonymous sign-in), and object storage — and RLS pushes authorization <em>into the database</em>, so security doesn't depend on the app remembering to filter every query. Fewer moving parts than stitching together Auth0 + S3 + a managed Postgres.</td></tr>
+<tr><td>Text-to-speech</td><td>ElevenLabs (primary), OpenAI (optional)</td><td>ElevenLabs has the most natural long-form voices; OpenAI is a cheaper fallback and a second provider so a single vendor's quota can't take the app down. Both sit behind one abstraction so adding a third is one file.</td></tr>
+<tr><td>Audio</td><td>ffmpeg / ffprobe (static binaries)</td><td>The de-facto standard for audio; static builds mean no system install on the host. Used to generate silence, measure real durations, and stitch/normalize the final MP3.</td></tr>
+<tr><td>Parsing</td><td>pdfjs-dist + @napi-rs/canvas, adm-zip + fast-xml-parser, tesseract.js</td><td>pdfjs is Mozilla's battle-tested PDF engine (needs canvas for <code>DOMMatrix</code>); EPUB/DOCX are just zips of XML, so adm-zip + a fast XML parser is enough; tesseract.js is pure-JS OCR so there's nothing extra to install.</td></tr>
+<tr><td>Deploy / CI</td><td>Render (Blueprint) + GitHub Actions</td><td>Render runs a <em>persistent</em> Node service (required, see architecture) and a static site from one <code>render.yaml</code>. GitHub Actions runs tests + lint + format on every push.</td></tr>
+<tr><td>Tests / quality</td><td>node:test (100 tests), ESLint, Prettier</td><td>The built-in test runner means zero test-framework dependencies. Fixtures (PDF/EPUB/DOCX) are generated in memory as reviewable code, not committed as opaque binaries.</td></tr>
+</table>
+<div class="callout"><strong>A note on "Vercel."</strong> You may see a <code>app.set("trust proxy", 1)</code> line commented "Behind Vercel/proxies." The <em>actual</em> production deployment is <strong>Render</strong>, not Vercel — configured entirely by <code>render.yaml</code>. The <code>trust proxy</code> setting matters on <em>any</em> platform that puts a reverse proxy in front of the app (Render included): without it, <code>express-rate-limit</code> sees the proxy's IP instead of the real client IP and would rate-limit everyone as one. If asked "where is it deployed," the honest answer is Render; the proxy setting is platform-agnostic.</div>
+
+<h2 id="auth">12 · Auth, security &amp; RLS</h2>
+<ul>
+<li><strong>Identity comes from the verified JWT, never the request body.</strong> The API originally trusted a <code>user_id</code> in the body — which let any caller act as any user by typing a different UUID. Now the id is read only from the token Supabase verifies, and the token is forwarded so <code>auth.uid()</code> resolves inside Postgres and RLS applies as written.</li>
+<li><strong>RLS is the real security boundary.</strong> Every table has policies of the form <code>auth.uid() = user_id</code> for select/insert/update/delete. Even if an API route forgot a <code>WHERE user_id = …</code>, the database still refuses to return another user's rows. Security doesn't depend on the app being bug-free.</li>
+<li><strong>Guests are real users.</strong> Anonymous sign-in gives every visitor a genuine UUID, so history, quotas, and RLS all work through <em>one</em> code path — no <code>user_id = "guest"</code> special case to get wrong.</li>
+<li><strong>CORS + Bearer, not cookies.</strong> Auth is a Bearer JWT, not a cookie, so a hostile origin can't forge a session via CSRF. <code>ALLOWED_ORIGINS</code> is an allow-list; <code>*</code> is safe here precisely because RLS guards every row regardless of who asks.</li>
+<li><strong>Private storage + signed URLs.</strong> Audio lives in a private bucket; playback uses short-lived signed URLs, so links can't be shared or guessed permanently. The podcast feed uses longer-lived signed enclosures (podcast apps fetch hours later) plus a rotatable feed token.</li>
+<li><strong>The anon key is safe in the browser.</strong> It's meant to be public; RLS is what protects data, not secrecy of that key. The <em>service-role</em> key (which bypasses RLS) lives only on the server and enables the feed + standalone worker.</li>
+</ul>
+
+<h2 id="caching">13 · Caching, quotas &amp; cost control</h2>
+<p><strong>Audio is content-addressed.</strong> The cache key is <code>sha256(provider:voice:model:text)</code>. Re-uploading an unchanged document, or a repeated heading within one document, costs nothing and returns instantly. Voice and model are part of the key because the same text in a different voice is genuinely different audio.</p>
+<p><strong>Cache-before-mark ordering.</strong> A worker writes the <code>audio_cache</code> row <em>before</em> marking the chunk done. If the process dies between the two, a retry finds the cache entry and skips the paid API call — worst case a wasted upload, never a wasted (billed) synthesis.</p>
+<p><strong>Quota is measured from actual usage.</strong> <code>lib/quota.js</code> sums real billable characters in a rolling 24 h window across both paths (single-shot conversions + non-cached chunks). Because the estimate and the real upload share the same parsing code, the quoted cost can't drift from the charged cost. Default cap: 10,000 chars/day (matching the ElevenLabs free tier's monthly ceiling).</p>
+
+<h2 id="tts">14 · The TTS provider abstraction</h2>
+<p><code>lib/tts/index.js</code> is the one interface every caller uses. Providers (<code>elevenlabs.js</code>, <code>openai.js</code>) each only know how to translate <em>one</em> request and classify <em>one</em> error; everything shared — defaults, dispatch, the retry policy, and the cache-key format — lives in the index. So adding a provider is one file plus one registry entry.</p>
+<p><strong>Retry with jittered exponential backoff.</strong> <code>withRetry</code> retries only <em>retryable</em> errors (429, 5xx) and gives up immediately on permanent ones (401, 422) rather than burning the budget proving they'll fail. The backoff is <em>jittered</em> because the pool runs several calls at once: without jitter a 429 hits every worker simultaneously, they all sleep the same 1000 ms, and they all retry in the same instant — rebuilding the exact spike that caused the limit. It also honours a server's <code>Retry-After</code> when present.</p>
+<p><strong>Fail-fast on fatal errors.</strong> If a worker hits a 401 (bad key) or 429 (quota exhausted), the whole pool stops — turning a hundred pointless calls into one clear failure message.</p>
+
+<h2 id="frontend">15 · Frontend architecture</h2>
+<ul>
+<li><strong>State-driven navigation, no router.</strong> <code>App.jsx</code> holds boolean/id state (<code>showLibrary</code>, <code>openDocumentId</code>, …) and renders exactly one view. Nav links are defined once and shared between the desktop bar and the mobile drawer so the two can't drift.</li>
+<li><strong>Direct-to-Supabase for auth &amp; simple reads.</strong> The client talks to Supabase directly for session/auth and for the History view; everything heavy goes through the API. <code>api.js</code> centralizes every backend call and always attaches a fresh Bearer token.</li>
+<li><strong>SSE over <code>fetch</code>, not <code>EventSource</code>.</strong> The native <code>EventSource</code> can't send an <code>Authorization</code> header, and the usual workaround (JWT in the query string) leaks the token into every proxy log. So the client reads the stream manually via <code>fetch</code> + a reader, parsing <code>data:</code> frames itself.</li>
+<li><strong>Read-along keys on the timeline.</strong> The stitched output ships a per-chunk timeline (start/end seconds); the sentence under the playhead is the text being spoken, which is what drives the highlight and click-to-jump.</li>
+<li><strong>Every progress number is real.</strong> The "pipeline theater" is fed by genuine SSE events — no fake spinners — which is both a nice UX touch and an honest reflection of the backend.</li>
+</ul>
+
+<h2 id="testing">16 · Testing &amp; CI</h2>
+<p>100 unit tests run on Node's built-in <code>node:test</code> — no test framework dependency, and <code>npm test</code> needs no credentials. Coverage spans the chunker, sentence boundaries, PDF cleaning, EPUB/DOCX extraction, format detection, pronunciation rules, retry/backoff, ffmpeg stitching (with <em>real</em> audio), RSS rendering, and error classification. PDF/EPUB/DOCX fixtures are generated in memory as reviewable code rather than committed as opaque binaries — so a reviewer can see exactly what's being tested. GitHub Actions runs tests, ESLint, and Prettier in parallel on every push to <code>main</code>.</p>
+
+<h2 id="deploy">17 · Deployment (Render)</h2>
+<p>One <code>render.yaml</code> Blueprint deploys <strong>both</strong> services from a single repo: the persistent Node API and the static Vite web build. Push to <code>main</code> → Render auto-redeploys both; GitHub Actions runs the checks in parallel.</p>
+<h4>The build/run configuration, and why</h4>
+<ul>
+<li><strong>API uses <code>npm ci</code> (not <code>install</code>)</strong> so it installs exactly what <code>package-lock.json</code> pins — a deploy can't silently pick a different version than the one tested.</li>
+<li><strong>Full install, no <code>--omit=optional</code>.</strong> pdfjs needs <code>@napi-rs/canvas</code> for <code>DOMMatrix</code> on every PDF, and that package ships its native binary as an <em>optional</em> platform dependency; <code>--omit=optional</code> would strip it and break all PDF parsing. The full install also brings in <code>tesseract.js</code>, so scanned-PDF OCR works (its ~10 MB model downloads on first use, not at build time).</li>
+<li><strong>Health check at <code>/api/health</code></strong> so Render restarts the service if it stops answering, and a misconfigured deploy is visible without reading logs.</li>
+<li><strong>Web is a static publish</strong> of <code>tts-frontend/dist</code> with a catch-all rewrite to <code>index.html</code> so a hard refresh on any path still serves the app.</li>
+<li><strong>Secrets via <code>sync: false</code></strong> — set in the Render dashboard, never in the repo. Cross-references (<code>ALLOWED_ORIGINS</code>, <code>VITE_BACKEND_URL</code>) are hard-coded to the default service URLs and only need changing if a service is renamed.</li>
+</ul>
+<h4>First-time deploy checklist</h4>
+<ol>
+<li>Push the repo to GitHub.</li>
+<li>Point the Supabase CLI at the prod project: <code>supabase link</code> → <code>supabase db push</code> (tables, RLS, RPCs, buckets) → <code>supabase config push</code> (enables anonymous sign-in — the guest flow depends on it).</li>
+<li>Render → New → Blueprint → pick the repo; Render reads <code>render.yaml</code> and prompts for each <code>sync: false</code> secret (Supabase URL + anon key, ElevenLabs key, optionally OpenAI + service-role key).</li>
+<li>Verify: <code>/api/health</code> returns <code>{"ok":true,…}</code> with the right features enabled; upload a small doc and confirm it narrates end to end.</li>
+</ol>
+<div class="callout warn"><strong>Durability trade-off.</strong> By default the API synthesizes <em>in-process</em>, so work in flight is lost if the free instance sleeps or restarts mid-job — but <code>POST /api/documents/:id/process</code> requeues it, and cached chunks are skipped so a retry is cheap. For real resilience you run <code>worker.js</code> as a <em>separate</em> Render service with <code>INLINE_PROCESSING=false</code> and the service-role key; it has a stale-work reaper that returns crashed chunks (stuck in <code>processing</code> &gt; 10 min) to the queue on boot and periodically.</div>
+
+<h2 id="decisions">18 · Design decisions to be able to defend</h2>
+<div class="callout"><strong>Identity from the verified JWT, never the body.</strong> Forwarding the caller's token means <code>auth.uid()</code> resolves and RLS applies exactly as written.</div>
+<div class="callout"><strong>Guests are real users.</strong> One anonymous-UUID code path for history, quota, and RLS — no special-casing.</div>
+<div class="callout"><strong>Audio is content-addressed.</strong> <code>sha256(provider:voice:model:text)</code> makes re-uploads free and instant.</div>
+<div class="callout"><strong>The queue is the <code>chunks</code> table.</strong> <code>FOR UPDATE SKIP LOCKED</code> makes concurrent workers safe with no extra infrastructure.</div>
+<div class="callout"><strong>Progress is derived, not counted.</strong> Counting rows can't drift from reality the way an incremented counter does after a failure.</div>
+<div class="callout"><strong>The worker pool takes a client rather than making one.</strong> A user-scoped client runs under RLS; a service-role client drains every queue from a standalone process. Only the trigger changes.</div>
+<div class="callout"><strong>Estimate and real upload share one code path.</strong> The confirm-screen cost can never diverge from what you're actually charged.</div>
+
+<h2 id="limits">19 · Known limits &amp; future work</h2>
+<ul>
+<li><strong>In-process synthesis</strong> is lost if the server restarts mid-job (the retry endpoint requeues it); the standalone worker with the reaper is the durable option.</li>
+<li><strong>SSE progress is per-process.</strong> Multiple instances behind a load balancer would need a shared channel — Postgres <code>LISTEN/NOTIFY</code> or Supabase Realtime — because a client attached to instance A hears nothing about a job on instance B.</li>
+<li><strong>The cache is per-user.</strong> A global cache would save more but would leak whether someone else had synthesized the same text.</li>
+<li><strong>OCR is best-effort</strong> (clean scans, English by default).</li>
+<li><strong>ElevenLabs' free tier is 10,000 chars/month</strong> — a real chapter is ~100k characters; OpenAI or a paid tier is the way around it.</li>
+</ul>
+
+<h2 id="qa-project">20 · Interview Q&amp;A — this project</h2>
+<div class="qa">
+
+<h3>Q. Give me the 30-second pitch.</h3>
+<p>SoundScript turns documents into narrated audiobooks. You upload a PDF, EPUB, DOCX or text file and get back a single MP3 with natural pauses, clickable chapters, and read-along highlighting, plus a private podcast feed. The interesting engineering isn't the text-to-speech call — that's one line — it's everything around it: detecting and cleaning messy PDFs, chunking text so splits aren't audible, a Postgres-backed concurrent job queue, content-addressed caching to avoid paying twice, and ffmpeg stitching with real chapter timestamps.</p>
+
+<h3>Q. Why is the backend a persistent server and not serverless?</h3>
+<p>Two reasons, both fatal to serverless. First, synthesizing a long document takes minutes; a serverless function is killed once it returns its HTTP response, which would end the job the instant it started. Second, the app streams live progress over long-lived SSE connections, and serverless can't hold a connection open past the response. A persistent process keeps both the worker pool and the event stream alive for the whole job.</p>
+
+<h3>Q. How does the job queue work without Redis or a message broker?</h3>
+<p>The <code>chunks</code> table <em>is</em> the queue. A stored procedure, <code>claim_next_chunk</code>, does <code>SELECT … FOR UPDATE SKIP LOCKED</code> to grab the next pending row and flip it to <code>processing</code> atomically. <code>SKIP LOCKED</code> is the key: if two workers ask simultaneously, one locks the row and the other skips past it to the next one, so no chunk is ever claimed twice and workers never block each other. It's a real queue with exactly-once claiming, using only Postgres.</p>
+
+<h3>Q. How do you make concurrent workers safe?</h3>
+<p>Three layers. The chunk claim uses <code>FOR UPDATE SKIP LOCKED</code>. The <em>job</em> claim is an <code>UPDATE … WHERE status='queued'</code> that returns a row only to the caller who won, so a double-trigger can't run two pools over one document. And chunks carry an <code>attempts</code> counter with a max, so a chunk that keeps killing workers eventually fails instead of looping forever.</p>
+
+<h3>Q. What happens if the server crashes mid-job?</h3>
+<p>In the default in-process mode, in-flight work stops — but nothing is corrupted, because audio is cached <em>before</em> the chunk is marked done, so a retry skips the paid API call. <code>POST /api/documents/:id/process</code> requeues the document. In the durable mode, the standalone worker's reaper finds chunks stuck in <code>processing</code> longer than 10 minutes (their owner is clearly gone), flips them back to <code>pending</code>, and the <code>attempts</code> counter survives so they don't retry forever.</p>
+
+<h3>Q. Walk me through your caching. What's the key?</h3>
+<p><code>sha256(provider:voice:model:text)</code>. Voice and model are in the key because the same text in a different voice is different audio. It's per-user and content-addressed, so re-uploading an unchanged document — or a repeated heading inside one document — is free and instant. I also write the cache row before marking the chunk done, so a crash between the two costs at most a wasted upload, never a wasted (billed) synthesis.</p>
+
+<h3>Q. How do you keep the cost estimate honest?</h3>
+<p>The estimate endpoint and the real upload run the <em>same</em> parsing, cleaning, and chunking code — the estimate just stops before writing anything. So the chunk count, cache hits, and billable characters on the confirm screen are exactly what you'll be charged. There's no separate "estimator" that could drift from reality.</p>
+
+<h3>Q. Why chunk text at all, and how do you choose split points?</h3>
+<p>TTS APIs cap input length, so a 40-page chapter can't go in one call. Where the split lands is audible — break mid-sentence and the narration restarts against a wall. So the chunker prefers boundaries in order: paragraph, then sentence, then clause (after commas), then word, descending only when the level above won't fit the cap. It only ever splits inside a word for a pathological token longer than the whole budget, like a URL.</p>
+
+<h3>Q. How does read-along highlighting stay in sync?</h3>
+<p>Stitching measures each chunk's <em>real</em> encoded duration (including inserted silence) and emits a timeline of start/end seconds per chunk. The frontend finds the chunk under the current playhead and highlights it; clicking a sentence seeks to that chunk's start. Because the timeline comes from measured durations, not estimated-from-character-count, it doesn't drift over a long document.</p>
+
+<h3>Q. Why re-encode the audio instead of just concatenating the MP3 bytes?</h3>
+<p>ffmpeg's concat demuxer requires every input to share codec parameters. A byte copy would paste mismatched frames into a file that plays wrong rather than failing loudly the moment you mix voices, models, or older cache entries. Re-encoding to one canonical format (128k mono 44.1kHz) normalizes everything, and it costs seconds against minutes of synthesis.</p>
+
+<h3>Q. How is authentication and authorization handled?</h3>
+<p>Auth is a Supabase JWT sent as a Bearer token. The user id is taken only from the verified token, never from the request body — trusting the body would let anyone impersonate anyone by changing a UUID. Authorization is enforced by Postgres Row-Level Security: every table has <code>auth.uid() = user_id</code> policies, so even a buggy query can't return another user's data. The app forwards the token so <code>auth.uid()</code> resolves inside the database.</p>
+
+<h3>Q. Guests can use it with no signup — how does that not break your data model?</h3>
+<p>Anonymous sign-in gives every guest a real UUID, so they flow through the exact same RLS, history, and quota code as a signed-up user. When they later "save their work," I call <code>updateUser</code> to attach an email to that <em>same</em> uid, so their history carries over. Using <code>signUp</code> would create a new uid and orphan everything — a bug I specifically avoided.</p>
+
+<h3>Q. Why SSE instead of WebSockets or polling?</h3>
+<p>Progress is one-directional server→client, so SSE is the right-sized tool — simpler than WebSockets, and it pushes the instant a chunk finishes instead of polling on a timer. I implement it over <code>fetch</code> rather than the native <code>EventSource</code>, because <code>EventSource</code> can't send an auth header and putting the JWT in the query string would leak it into proxy logs.</p>
+
+<h3>Q. How do you handle rate limits and transient failures from the TTS provider?</h3>
+<p>Retryable errors (429, 5xx) get exponential backoff with jitter; permanent ones (401, 422) fail immediately instead of wasting attempts. Jitter matters because several workers run at once — without it a 429 hits them all, they sleep the same interval, and they retry in the same instant, rebuilding the spike. I also honour <code>Retry-After</code>, and if a worker sees a 401 or quota-exhausted 429 the whole pool stops, turning a hundred doomed calls into one clear error.</p>
+
+<h3>Q. Why Supabase over rolling your own?</h3>
+<p>It gives me a real Postgres database, JWT auth with anonymous sign-in, and object storage on one platform — and crucially RLS, which moves authorization into the database so security isn't dependent on the app remembering to filter every query. Rolling my own would mean stitching together an auth provider, S3, and managed Postgres, and re-implementing row-level security in application code.</p>
+
+<h3>Q. What are the biggest limitations, and how would you scale it?</h3>
+<p>SSE is per-process, so horizontal scaling needs a shared channel — Postgres <code>LISTEN/NOTIFY</code> or Supabase Realtime. In-process synthesis loses in-flight work on restart, so I'd move to the standalone worker as the default. The cache is per-user for privacy; a global cache would save more compute. And the free ElevenLabs tier caps at 10k chars/month, so production means a paid tier or leaning on the OpenAI fallback.</p>
+
+<h3>Q. How did you detect file formats safely?</h3>
+<p>From the file's own bytes, never the extension or MIME type — both are client-supplied and spoofable. PDF declares itself in its first four bytes (<code>%PDF</code>). EPUB and DOCX are both zips, so I break the tie by scanning for a marker path inside: <code>word/document.xml</code> means DOCX, <code>META-INF/container.xml</code> means EPUB. Anything else falls through to plain text.</p>
+
+<h3>Q. What was the hardest part?</h3>
+<p>Making messy PDFs sound like prose. A PDF has no concept of a paragraph — extraction gives one line per visual line, the running header repeats on every page, page numbers sit on their own lines, and words are hyphenated across line breaks. The cleaning stage is a stack of heuristics: find furniture by cross-page repetition, strip page numbers, de-hyphenate, and rejoin wrapped lines. Every rule exists because of a specific way naive extraction sounded wrong when read aloud.</p>
+
+</div>
+
+<h2 id="qa-general">21 · Interview Q&amp;A — general tech you should know</h2>
+<div class="qa">
+
+<h3>Q. What is Row-Level Security and why does it matter?</h3>
+<p>RLS is a Postgres feature that attaches authorization policies to a table so the <em>database</em> filters rows by the current user, not the application. A policy like <code>USING (auth.uid() = user_id)</code> means a query only ever sees that user's rows, even if the app code forgets a <code>WHERE</code> clause. It's defence in depth: authorization lives next to the data instead of scattered across every endpoint.</p>
+
+<h3>Q. Explain <code>FOR UPDATE SKIP LOCKED</code>.</h3>
+<p>In a <code>SELECT … FOR UPDATE</code>, Postgres locks the selected rows so no one else can modify them until your transaction ends. Normally a second transaction wanting the same rows would <em>block</em>. <code>SKIP LOCKED</code> tells it to skip already-locked rows and take the next available ones instead. That turns a table into a concurrent-safe work queue: many workers each grab different rows with no blocking and no double-processing.</p>
+
+<h3>Q. Serverless vs. a persistent server — when do you pick which?</h3>
+<p>Serverless (Lambda, Vercel functions) is great for short, bursty, stateless request/response work — it scales to zero and you pay per invocation. A persistent server wins when you need long-running background work, in-memory state between requests, or long-lived connections (SSE, WebSockets), because serverless functions are killed when the response returns. SoundScript needs minutes-long jobs and open SSE streams, so persistent is mandatory.</p>
+
+<h3>Q. What is exponential backoff with jitter, and why the jitter?</h3>
+<p>Exponential backoff waits progressively longer between retries (1s, 2s, 4s…) so you stop hammering a struggling service. Jitter adds randomness to each wait. Without it, many clients that failed at the same instant retry at the same instant — a "thundering herd" that recreates the overload. Randomizing spreads the retries out so the service can recover.</p>
+
+<h3>Q. SSE vs. WebSockets vs. long polling?</h3>
+<p>Long polling repeatedly asks "anything new?" — simple but wasteful. SSE is a one-way server→client stream over a single long-lived HTTP response, ideal for progress and notifications, with automatic reconnection. WebSockets are full-duplex (both directions), needed for chat, games, or collaborative editing. Pick the least powerful tool that fits: for one-way progress, SSE.</p>
+
+<h3>Q. What does content-addressed storage mean?</h3>
+<p>You name a stored object by a hash of its <em>content</em> rather than an arbitrary id. Identical content produces the same key, so you get automatic deduplication and a free cache — asking for the same thing twice hits the same entry. Git works this way. SoundScript keys audio by a hash of provider+voice+model+text.</p>
+
+<h3>Q. Why does the anon/public API key being in the browser not compromise security?</h3>
+<p>Because it grants no privileges by itself — it only lets the client <em>attempt</em> operations, which RLS then authorizes per row against the authenticated user's JWT. The key is designed to be public. The sensitive credential is the service-role key, which bypasses RLS, and it never leaves the server.</p>
+
+<h3>Q. CommonJS vs. ES Modules?</h3>
+<p>CommonJS (<code>require</code>/<code>module.exports</code>) is Node's original synchronous module system. ES Modules (<code>import</code>/<code>export</code>) are the standardized, statically-analyzable system used across modern JS and the browser, supporting async loading and tree-shaking. This backend uses CommonJS for simplicity and broad compatibility; the Vite frontend uses ESM.</p>
+
+<h3>Q. What is CORS actually protecting against?</h3>
+<p>CORS is a browser mechanism that controls which origins may read responses from your API. It doesn't protect the server — any non-browser client ignores it — it protects <em>users</em> from a malicious site making authenticated cross-origin requests with their credentials. Because SoundScript uses Bearer tokens rather than cookies, a hostile origin can't ride along on an existing session anyway, but the allow-list is still good hygiene.</p>
+
+<h3>Q. What's the difference between authentication and authorization?</h3>
+<p>Authentication is proving <em>who</em> you are (the JWT verification). Authorization is deciding <em>what</em> you're allowed to do (RLS policies deciding which rows you can touch). SoundScript separates them cleanly: Supabase Auth handles the first, Postgres RLS handles the second.</p>
+
+<h3>Q. Why <code>npm ci</code> over <code>npm install</code> in CI/CD?</h3>
+<p><code>npm ci</code> installs strictly from <code>package-lock.json</code> and errors if <code>package.json</code> and the lockfile disagree, giving reproducible, deterministic builds. <code>npm install</code> can update the lockfile and resolve slightly different versions. For a deploy you want the exact versions you tested, so <code>ci</code>.</p>
+
+<h3>Q. What is idempotency and where does it appear here?</h3>
+<p>An idempotent operation has the same effect whether you do it once or many times. It matters for retries: re-processing a document is safe because cached chunks are skipped and job/chunk claims are atomic, so a duplicate trigger doesn't double-charge or double-produce. Designing for idempotency is what makes "just retry it" a safe recovery strategy.</p>
+
+</div>
+
+<h2 id="cheatsheet">22 · One-minute cheat sheet</h2>
+<table>
+<tr><th>Question</th><th>One-liner</th></tr>
+<tr><td>What is it?</td><td>Documents → narrated audiobooks with chapters, read-along, and a private podcast feed.</td></tr>
+<tr><td>Hardest engineering?</td><td>Turning messy PDFs into prose, and orchestrating slow, paid, rate-limited synthesis safely.</td></tr>
+<tr><td>The queue?</td><td>The <code>chunks</code> table, drained via <code>FOR UPDATE SKIP LOCKED</code>. No Redis.</td></tr>
+<tr><td>Why persistent, not serverless?</td><td>Minutes-long jobs + open SSE streams die when a serverless function returns.</td></tr>
+<tr><td>Security model?</td><td>JWT for identity, Postgres RLS for authorization — the DB enforces it, not the app.</td></tr>
+<tr><td>Cost control?</td><td>Content-addressed cache + honest estimate (same code as the real upload) + daily quota.</td></tr>
+<tr><td>Providers?</td><td>ElevenLabs primary, OpenAI fallback, behind a one-file abstraction with jittered retry.</td></tr>
+<tr><td>Deploy?</td><td>One <code>render.yaml</code> → persistent API + static web; GitHub Actions runs tests/lint/format.</td></tr>
+<tr><td>Guests?</td><td>Anonymous UUID = a real user, so one code path; upgrade keeps the same id + history.</td></tr>
+<tr><td>Biggest limit?</td><td>Per-process SSE + in-process synthesis; scaling means a shared channel + the standalone worker.</td></tr>
+</table>
+
+<div class="footer">
+SoundScript · Complete Developer Guide · Built by dishita · Live demo: soundscript-web.onrender.com<br>
+Generated as a teaching reference from the project source.
+</div>
+
+</div>
+</body>
+</html>

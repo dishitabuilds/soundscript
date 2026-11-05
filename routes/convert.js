@@ -5,7 +5,8 @@ const { requireAuth } = require("../lib/auth");
 const {
   synthesize,
   withRetry,
-  contentHash,
+  hashFor,
+  resolveSettings,
   TtsError,
   VOICE_ID,
 } = require("../lib/tts");
@@ -38,7 +39,8 @@ router.post("/", convertLimiter, requireAuth, async (req, res) => {
   }
 
   try {
-    const hash = contentHash(text);
+    const settings = resolveSettings();
+    const hash = hashFor(text, settings);
 
     const { data: cached } = await req.supabase
       .from("tts_conversions")
@@ -66,7 +68,7 @@ router.post("/", convertLimiter, requireAuth, async (req, res) => {
       });
     }
 
-    const audio = await withRetry(() => synthesize(text), {
+    const audio = await withRetry(() => synthesize(text, settings), {
       onRetry: ({ attempt, wait }) =>
         console.warn(`convert: retry ${attempt} in ${wait}ms`),
     });

@@ -13,27 +13,12 @@
 #           "Cannot reach the SoundScript service (Failed to fetch)" on a page
 #           that is otherwise perfectly healthy.
 #
-# One request to /api/keepalive prevents both. It wakes the Render process, and
-# that process runs a real query against Postgres -- which is the activity
-# Supabase counts. See the endpoint in index.js.
-#
-# CAVEAT WORTH KNOWING: GitHub disables scheduled workflows in a public
-# repository after 60 days with no repo activity, and emails the owner when it
-# does. If this repo goes quiet for two months, re-enable the workflow from the
-# Actions tab (or push any commit) -- otherwise the pings stop and Supabase
-# pauses again about a week later.
+# A request to /api/keepalive wakes the Render process and runs a database
+# query. Keep this manual while the production Supabase endpoint is unreachable.
 
 name: Keep-alive
 
 on:
-  schedule:
-    # Every 10 minutes. Render's idle timeout is 15, and GitHub's scheduler
-    # treats cron as a request rather than a promise -- runs are routinely
-    # several minutes late under load -- so the 5-minute margin is the point.
-    - cron: "*/10 * * * *"
-
-  # Lets a run be triggered by hand from the Actions tab, which is how to
-  # confirm the endpoint works right after a deploy instead of waiting.
   workflow_dispatch:
 
 # A cold start can outlast the gap to the next run. Queue rather than cancel:
@@ -71,10 +56,6 @@ jobs:
           cat response.json 2>/dev/null || true
           echo
 
-          # Failing loudly is deliberate. GitHub emails the owner when a
-          # scheduled run fails, so this step is also the only uptime alert
-          # this deployment has -- a paused database or a dead API surfaces as
-          # a message rather than as a visitor bouncing off a broken page.
           if [ "$code" != "200" ]; then
             echo "::error::Keep-alive failed (HTTP $code). If the database is unreachable, check whether the Supabase project is paused: https://supabase.com/dashboard/project/${SUPABASE_PROJECT_REF}"
             exit 1

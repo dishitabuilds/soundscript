@@ -9,6 +9,7 @@ import {
 } from "./api";
 import PipelineTheater from "./PipelineTheater";
 import Loading from "./Loading";
+import StudyAssistant from "./StudyAssistant";
 
 const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
 
@@ -83,6 +84,14 @@ function ReadAlong({ chunks, timeline, currentTime, onSeek }) {
               return (
                 <span
                   key={chunk.idx}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (entry && (event.key === "Enter" || event.key === " ")) {
+                      event.preventDefault();
+                      onSeek(entry.startSeconds);
+                    }
+                  }}
                   ref={isActive ? activeRef : null}
                   onClick={() => entry && onSeek(entry.startSeconds)}
                   className={`cursor-pointer transition rounded px-0.5 ${
@@ -108,8 +117,10 @@ export default function DocumentView({ documentId, onBack }) {
   const [job, setJob] = useState(null);
   const [asset, setAsset] = useState(null);
   const [audioUrl, setAudioUrl] = useState("");
+  const [downloadUrl, setDownloadUrl] = useState("");
   const [error, setError] = useState("");
   const [retrying, setRetrying] = useState(false);
+  const [refreshId, setRefreshId] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [rate, setRate] = useState(1);
   const [chunks, setChunks] = useState(null);
@@ -128,10 +139,16 @@ export default function DocumentView({ documentId, onBack }) {
 
   // Load the finished audio. The library bucket is private, so this needs a
   // signed URL rather than a permanent public link.
-  const loadAudio = async (assetRow) => {
+  const loadAudio = async (assetRow, title = "audiobook") => {
     if (!assetRow?.path) return;
     try {
-      setAudioUrl(await signedUrl(assetRow.path));
+      const name = title.replace(/[\r\n/\\]/g, "_") + ".mp3";
+      const [playback, download] = await Promise.all([
+        signedUrl(assetRow.path),
+        signedUrl(assetRow.path, 3600, name),
+      ]);
+      setAudioUrl(playback);
+      setDownloadUrl(download);
     } catch (err) {
       setError(`Could not load audio: ${err.message}`);
     }
@@ -139,6 +156,7 @@ export default function DocumentView({ documentId, onBack }) {
 
   useEffect(() => {
     let live = true;
+    let polling = true;
 
     const load = async () => {
       try {
@@ -148,10 +166,13 @@ export default function DocumentView({ documentId, onBack }) {
         setDoc(data.document);
         setProgress(data.progress);
         setJob(data.job);
+        polling = ["queued", "running", "assembling"].includes(
+          data.job?.status,
+        );
         setAsset(data.asset);
         // Stored before the audio element exists; applied on loadedmetadata.
         resumeAtRef.current = Number(data.position?.position_seconds) || 0;
-        if (data.asset) loadAudio(data.asset);
+        if (data.asset) loadAudio(data.asset, data.document.title);
 
         // The read-along needs the text only once the audio has a timeline.
         if (data.asset?.timeline?.length) {
@@ -165,6 +186,11 @@ export default function DocumentView({ documentId, onBack }) {
     };
 
     load();
+    // Standalone workers and other API instances cannot publish to this
+    // process's SSE bus. Poll until terminal as a durable progress fallback.
+    const poll = setInterval(() => {
+      if (live && polling) load();
+    }, 3000);
 
     // The stream closes itself once the job is terminal, so this is not a
     // permanent connection -- but it must still be torn down if the user
@@ -234,12 +260,13 @@ export default function DocumentView({ documentId, onBack }) {
 
     return () => {
       live = false;
+      clearInterval(poll);
       stop();
       // Best-effort parting save so "resume" reflects where they actually left.
       const t = currentTimeRef.current;
       if (t > 1) savePosition(documentId, t).catch(() => {});
     };
-  }, [documentId]);
+  }, [documentId, refreshId]);
 
   const seekTo = (seconds) => {
     if (!audioRef.current) return;
@@ -290,6 +317,7 @@ export default function DocumentView({ documentId, onBack }) {
       const data = await getDocument(documentId);
       setJob(data.job);
       setProgress(data.progress);
+      setRefreshId((n) => n + 1);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -420,7 +448,7 @@ export default function DocumentView({ documentId, onBack }) {
             </div>
 
             <a
-              href={audioUrl}
+              href={downloadUrl || audioUrl}
               download={`${doc.title}.mp3`}
               className="text-gold hover:text-gold-strong underline underline-offset-2 text-sm"
             >
@@ -428,6 +456,13 @@ export default function DocumentView({ documentId, onBack }) {
             </a>
           </div>
         )}
+
+        <StudyAssistant
+          key={documentId}
+          documentId={documentId}
+          onSeek={seekTo}
+          canPlay={Boolean(audioUrl)}
+        />
 
         {chunks?.length > 0 && asset?.timeline?.length > 0 && audioUrl && (
           <div className="mb-6">

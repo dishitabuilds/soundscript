@@ -13,6 +13,7 @@ const { hashFor, resolveSettings, TtsError } = require("../lib/tts");
 const { checkQuota } = require("../lib/quota");
 const { processDocument, requeueFailed } = require("../lib/worker/pool");
 const { subscribe } = require("../lib/events");
+const { buildPassages } = require("../lib/rag/passages");
 
 const router = express.Router();
 
@@ -106,7 +107,15 @@ async function planChunks(supabase, userId, text, ttsSettings) {
 
   if (error) throw new Error(`Cache lookup failed: ${error.message}`);
 
-  const cacheByHash = new Map((cached || []).map((c) => [c.content_hash, c]));
+  const cacheByHash = new Map(
+    (cached || [])
+      .filter(
+        (c) =>
+          c.bucket === "library" &&
+          c.path === userId + "/audio/" + c.content_hash + ".mp3",
+      )
+      .map((c) => [c.content_hash, c]),
+  );
 
   let billableChars = 0;
   let cachedCount = 0;
@@ -153,6 +162,11 @@ function buildChunkRows(plan, userId, documentId) {
  * estimate, which must agree to the character on what would be synthesised.
  */
 async function prepareSubmission(req) {
+  for (const field of ["title", "text", "provider", "voiceId", "modelId"]) {
+    if (req.body[field] != null && typeof req.body[field] !== "string") {
+      return { status: 400, error: field + " must be a string." };
+    }
+  }
   let text;
   let title;
   let sourceType;
@@ -211,9 +225,10 @@ async function prepareSubmission(req) {
     .from("pronunciation_rules")
     .select("pattern, replacement");
   if (rulesErr) return { status: 500, error: rulesErr.message };
+  const sourceText = text;
   text = applyRules(text, rules || []);
 
-  return { text, title, sourceType, fileBuffer, ttsSettings };
+  return { text, sourceText, title, sourceType, fileBuffer, ttsSettings };
 }
 
 /**
@@ -321,6 +336,28 @@ router.post("/", requireAuth, upload.single("file"), async (req, res) => {
       return res
         .status(500)
         .json({ error: `Could not create chunks: ${chunkError.message}` });
+    }
+
+    if (process.env.RAG_ENABLED === "true") {
+      const passages = buildPassages(prep.sourceText, text, plan.chunks);
+      if (passages.length > 2000) {
+        await cleanup("Too many study passages");
+        return res.status(413).json({
+          error: "This document is too large for the study assistant.",
+        });
+      }
+      const { error } = await req.supabase
+        .from("document_passages")
+        .insert(
+          passages.map((p) => ({ ...p, document_id: doc.id, user_id: userId })),
+        );
+      if (error) {
+        await cleanup(error.message);
+        return res.status(503).json({
+          error:
+            "Could not prepare the study assistant. Please try again later.",
+        });
+      }
     }
 
     // Store the original only once everything else has succeeded, so a rejected
@@ -489,8 +526,8 @@ router.get("/:id/text", requireAuth, async (req, res) => {
  * position updates race only with themselves and the newest one is the truth.
  */
 router.put("/:id/position", requireAuth, async (req, res) => {
-  const seconds = Number(req.body.seconds);
-  if (!Number.isFinite(seconds) || seconds < 0) {
+  const seconds = req.body.seconds;
+  if (typeof seconds !== "number" || !Number.isFinite(seconds) || seconds < 0) {
     return res
       .status(400)
       .json({ error: "seconds must be a non-negative number." });

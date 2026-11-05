@@ -49,6 +49,38 @@ export async function getDocument(id) {
   return asJson(res);
 }
 
+export async function getStudyStatus(id, signal) {
+  const res = await fetch(`${BASE}/api/documents/${id}/rag`, {
+    headers: await authHeader(),
+    signal,
+  });
+  const body = await res.json().catch(() => ({}));
+  if (body.code === "RAG_DISABLED") return null;
+  if (!res.ok) throw new Error(body.error || "Could not load document search.");
+  return body;
+}
+
+export async function prepareStudy(id, signal) {
+  return asJson(
+    await fetch(`${BASE}/api/documents/${id}/rag/index`, {
+      method: "POST",
+      headers: await authHeader(),
+      signal,
+    }),
+  );
+}
+
+export async function askDocument(id, question, options = {}, signal) {
+  return asJson(
+    await fetch(`${BASE}/api/documents/${id}/rag/ask`, {
+      method: "POST",
+      headers: { ...(await authHeader()), "Content-Type": "application/json" },
+      body: JSON.stringify({ question, ...options }),
+      signal,
+    }),
+  );
+}
+
 export async function deleteDocument(id) {
   const res = await fetch(`${BASE}/api/documents/${id}`, {
     method: "DELETE",
@@ -126,11 +158,12 @@ export async function getDocumentText(id) {
 
 /** Remember playback position so any device can resume there. */
 export async function savePosition(id, seconds) {
-  await fetch(`${BASE}/api/documents/${id}/position`, {
+  const res = await fetch(`${BASE}/api/documents/${id}/position`, {
     method: "PUT",
     headers: { ...(await authHeader()), "Content-Type": "application/json" },
     body: JSON.stringify({ seconds }),
   });
+  if (!res.ok) await asJson(res);
 }
 
 export async function listPronunciations() {
@@ -237,10 +270,14 @@ export function streamDocument(id, onEvent, onError) {
  * Short-lived URL for a private object. The library bucket is not public, so
  * playback needs one of these rather than a permanent link.
  */
-export async function signedUrl(path, expiresIn = 3600) {
+export async function signedUrl(path, expiresIn = 3600, downloadName) {
   const { data, error } = await supabase.storage
     .from("library")
-    .createSignedUrl(path, expiresIn);
+    .createSignedUrl(
+      path,
+      expiresIn,
+      downloadName ? { download: downloadName } : undefined,
+    );
   if (error) throw new Error(error.message);
   return data.signedUrl;
 }
