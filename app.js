@@ -96,42 +96,21 @@ app.get("/api/health", async (req, res) => {
         "health.diagnostic.token",
       );
 
-      // supabase-js returns network failures instead of throwing, so a `try`
-      // that merely completes proves nothing: an unreachable project used to
-      // report authOk:true while every browser login failed -- the one
-      // diagnostic meant to catch that outage was the one lying about it.
-      // Only a reply from the auth server counts: an "invalid token" 401 is a
-      // reply and means configured; AuthRetryableFetchError with status 0
-      // means the request never got one.
-      const noAnswer =
-        error && error.name === "AuthRetryableFetchError" && !error.status;
-
-      body.authOk = !noAnswer;
-      if (noAnswer) body.authError = `Supabase unreachable: ${error.message}`;
-    } catch (err) {
+      // A 4xx for the deliberately invalid token proves the auth server
+      // answered. A network failure or gateway 5xx does not.
+      body.authOk = !error || (error.status >= 400 && error.status < 500);
+      if (!body.authOk) body.authError = "Supabase Auth did not answer.";
+    } catch {
       body.authOk = false;
-      body.authError = err.message;
+      body.authError = "Supabase Auth could not be checked.";
     }
   }
 
   res.json(body);
 });
 
-// Keeps both free plans awake. Render spins a free service down after 15
-// minutes idle, and Supabase pauses a free project after roughly a week with no
-// database requests -- and a paused project cannot be woken by traffic, only by
-// a click in the dashboard. That pause is what takes this site down hardest:
-// the browser asks Supabase for an anonymous session before it renders
-// anything, so a sleeping database shows up as "Cannot reach the SoundScript
-// service" on a page that is otherwise fine.
-//
-// One request here covers both halves. Reaching this process wakes Render, and
-// the select below is a real PostgREST round trip to Postgres, which is the
-// activity Supabase counts. RLS hands an anon caller zero rows and that is the
-// point -- the query still ran, and no data leaves.
-//
-// Deliberately unauthenticated: the caller is a cron job with no session, and
-// the reply carries a boolean and a duration, nothing else.
+// Check a real database round trip through the same API the frontend uses.
+// The scheduled caller has no session, so RLS protects document rows.
 app.get("/api/keepalive", async (req, res) => {
   const startedAt = Date.now();
 
@@ -145,25 +124,20 @@ app.get("/api/keepalive", async (req, res) => {
     // 503 rather than 200-with-a-flag: the cron treats a non-200 as the alert,
     // and a paused project is exactly the thing worth being loud about.
     if (error) {
-      console.error("Keepalive: database did not answer:", error.message);
+      console.error("Keepalive: database did not answer.", error.code || "");
       return res.status(503).json({
         ok: false,
         db: false,
-        error: error.message,
-        code: error.code || null,
         ms: Date.now() - startedAt,
       });
     }
 
     res.json({ ok: true, db: true, ms: Date.now() - startedAt });
-  } catch (err) {
-    // Missing env vars throw out of requireEnv() rather than returning an
-    // error, so a misconfigured deploy lands here instead of above.
-    console.error("Keepalive failed:", err.message);
+  } catch {
+    console.error("Keepalive could not check the database.");
     res.status(503).json({
       ok: false,
       db: false,
-      error: err.message,
       ms: Date.now() - startedAt,
     });
   }

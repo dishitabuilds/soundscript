@@ -43,20 +43,20 @@ In Render: **New → Blueprint**, pick the GitHub repo. Render reads
 
 ### `soundscript-api` env vars
 
-| Key                         | Value                                                     |
-| --------------------------- | --------------------------------------------------------- |
-| `SUPABASE_URL`              | Production project URL                                    |
-| `SUPABASE_ANON_KEY`         | Production anon key                                       |
-| `ELEVEN_API_KEY`            | ElevenLabs key                                            |
-| `OPENAI_API_KEY`            | Optional OpenAI speech and generated answers              |
-| `SUPABASE_SERVICE_ROLE_KEY` | Optional podcast feed                                     |
-| `KOKORO_URL`                | HTTPS URL of the deployed Kokoro speech service           |
-| `KOKORO_SERVICE_TOKEN`      | Token matching the Kokoro service                         |
-| `TTS_PROVIDER`              | `auto` to fall back from ElevenLabs quota to Kokoro       |
-| `RAG_ENABLED`               | `true` after applying the document RAG migration          |
-| `RAG_MODEL_URL`             | Optional HTTPS URL of the embedding and reranking service |
-| `RAG_MODEL_TOKEN`           | Token matching the model service                          |
-| `RAG_ANSWER_MODEL`          | Optional answer model to use with the OpenAI key          |
+| Key                         | Value                                                         |
+| --------------------------- | ------------------------------------------------------------- |
+| `SUPABASE_URL`              | Production project URL                                        |
+| `SUPABASE_ANON_KEY`         | Production anon key                                           |
+| `ELEVEN_API_KEY`            | ElevenLabs key                                                |
+| `OPENAI_API_KEY`            | Optional OpenAI speech and generated answers                  |
+| `SUPABASE_SERVICE_ROLE_KEY` | Optional podcast feed                                         |
+| `KOKORO_URL`                | HTTPS URL of the deployed Kokoro speech service               |
+| `KOKORO_SERVICE_TOKEN`      | Token matching the Kokoro service                             |
+| `TTS_PROVIDER`              | `auto` to fall back from ElevenLabs quota to Kokoro           |
+| `RAG_ENABLED`               | Set by the Blueprint. Apply the document RAG migration first. |
+| `RAG_MODEL_URL`             | Optional HTTPS URL of the embedding and reranking service     |
+| `RAG_MODEL_TOKEN`           | Token matching the model service                              |
+| `RAG_ANSWER_MODEL`          | Optional answer model to use with the OpenAI key              |
 
 `ALLOWED_ORIGINS` is already set in `render.yaml` to this deployment's web
 origin, so there is nothing to fill in for it.
@@ -66,6 +66,7 @@ separately and configure their URLs on the API. The API uses lexical search
 with source excerpts when RAG is enabled and the model URL is unset.
 See the [study assistant setup](docs/ai-study-assistant.md) and
 [validated CPU profile](docs/reviewed-ranking.md) for the model service.
+Automatic deploys wait for the linked branch's CI checks.
 
 ### `soundscript-web` env vars
 
@@ -95,6 +96,12 @@ browser will get a CORS error. With the default names, there is nothing to do.
 - **Free-plan cold starts.** Render's free web service sleeps after inactivity;
   the first API request can take about a minute. The static web page renders
   while the browser connects to Supabase Auth.
+- **Database activity.** [Production database check](.github/workflows/keepalive.yml)
+  makes four database reads per day through the live API to reduce Supabase
+  inactivity pauses. It lets Render sleep between checks to preserve shared
+  free instance hours. GitHub can disable scheduled workflows after 60 days of
+  inactivity in a public repository. If a check fails, verify both services
+  and resume Supabase from its dashboard if it was paused.
 - **In-process synthesis.** By default the API synthesises in-process
   (`INLINE_PROCESSING` unset). Work in flight is lost if the free instance
   sleeps or restarts mid-job; `POST /api/documents/:id/process` requeues it. For

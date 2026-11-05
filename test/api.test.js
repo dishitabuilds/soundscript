@@ -11,7 +11,7 @@ process.env.ELEVEN_API_KEY = "";
 process.env.OPENAI_API_KEY = "";
 const userId = "00000000-0000-4000-8000-000000000001";
 const documentId = "00000000-0000-4000-8000-000000000002";
-let db, server, base;
+let db, server, base, authDiagnosticStatus;
 before(async () => {
   mock.method(clients, "getAuthClient", () => ({
     ...db,
@@ -19,7 +19,7 @@ before(async () => {
       getUser: async (token) =>
         token === "test-session"
           ? { data: { user: { id: userId } }, error: null }
-          : { data: null, error: { message: "invalid token" } },
+          : { data: null, error: { status: authDiagnosticStatus } },
     },
   }));
   mock.method(clients, "getUserClient", () => db);
@@ -30,6 +30,7 @@ before(async () => {
 });
 beforeEach(() => {
   db = fakeSupabase();
+  authDiagnosticStatus = 401;
 });
 after(async () => {
   await new Promise((resolve) => server.close(resolve));
@@ -84,6 +85,13 @@ test("public root, health and database keepalive answer", async () => {
   assert.equal((await call("/api/keepalive")).status, 200);
   db.failures.set("documents", "simulated outage");
   assert.equal((await call("/api/keepalive")).status, 503);
+});
+
+test("health distinguishes a rejected diagnostic token from an upstream outage", async () => {
+  const check = async () => (await call("/api/health?debug=1")).json();
+  assert.equal((await check()).authOk, true);
+  authDiagnosticStatus = 521;
+  assert.equal((await check()).authOk, false);
 });
 
 test("RAG upload preserves canonical text and estimates never create passages", async () => {

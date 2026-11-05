@@ -16,6 +16,7 @@ services:
     runtime: node
     plan: free
     region: singapore
+    autoDeployTrigger: checksPass
 
     # ci, not install: it installs exactly what package-lock.json pins, so a
     # deploy cannot quietly pick up a different version than the one tested.
@@ -59,6 +60,10 @@ services:
       - key: DAILY_CHAR_QUOTA
         value: "10000"
 
+      # The document passage migration is applied in the production project.
+      - key: RAG_ENABLED
+        value: "true"
+
       # Conservative on the free plan's shared CPU: each worker holds an HTTP
       # request to ElevenLabs and a buffer of audio.
       - key: WORKER_CONCURRENCY
@@ -76,6 +81,7 @@ services:
   - type: web
     name: soundscript-web
     runtime: static
+    autoDeployTrigger: checksPass
     # Everything below is relative to this subfolder, so the same repo holds
     # both services.
     rootDir: tts-frontend

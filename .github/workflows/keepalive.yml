@@ -1,35 +1,18 @@
-# Keeps the live deployment awake.
-#
-# Both halves of this deployment sleep on their free plans, and they fail in
-# very different ways:
-#
-#   Render  spins a free web service down after 15 minutes idle. The next
-#           visitor waits ~50s for a cold start. Annoying, but self-healing.
-#   Supabase pauses a free project after roughly a week with few database
-#           requests -- and a paused project CANNOT be woken by traffic, only by
-#           a click in the dashboard. This is the one that actually took the
-#           site down: the browser asks Supabase for an anonymous session before
-#           it renders anything, so a paused database reads as
-#           "Cannot reach the SoundScript service (Failed to fetch)" on a page
-#           that is otherwise perfectly healthy.
-#
-# A request to /api/keepalive wakes the Render process and runs a database
-# query. Keep this manual while the production Supabase endpoint is unreachable.
-
-name: Keep-alive
+name: Production database check
 
 on:
+  schedule:
+    # Four real database reads per day, with room for Render to idle in between.
+    - cron: "17 0,6,12,18 * * *"
   workflow_dispatch:
 
-# A cold start can outlast the gap to the next run. Queue rather than cancel:
-# cancelling would abort the very request that is doing the waking.
 concurrency:
-  group: keepalive
+  group: production-database-check
   cancel-in-progress: false
 
 jobs:
   ping:
-    name: Ping the API and touch the database
+    name: Check the database through the API
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -38,27 +21,14 @@ jobs:
       SUPABASE_PROJECT_REF: bdkqxnavmwxyvxftjhuy
 
     steps:
-      - name: Wake the API and touch the database
+      - name: Verify the database answers
         run: |
-          # --max-time 120, well above the default: a cold Render start takes
-          # the better part of a minute, and a tight timeout here would report
-          # the service dead when it is merely waking up.
-          #
-          # --retry rides out a single blip. Without it a momentary network
-          # failure on GitHub's side lands a red run in the inbox and trains
-          # the eye to ignore this workflow -- which is the one outcome that
-          # would make it useless.
-          code=$(curl -sS --max-time 120 --retry 2 --retry-delay 20 \
-                      -o response.json -w '%{http_code}' \
-                      "$API_URL/api/keepalive") || code="000"
-
-          echo "HTTP $code"
-          cat response.json 2>/dev/null || true
-          echo
-
-          if [ "$code" != "200" ]; then
-            echo "::error::Keep-alive failed (HTTP $code). If the database is unreachable, check whether the Supabase project is paused: https://supabase.com/dashboard/project/${SUPABASE_PROJECT_REF}"
+          # Allow for a Render cold start and transient database errors.
+          if ! curl --fail-with-body --silent --show-error --max-time 80 \
+              --retry 2 --retry-delay 10 --output response.json \
+              "$API_URL/api/keepalive" ||
+              ! jq -e '.ok == true and .db == true' response.json > /dev/null; then
+            echo "::error::The database check failed. Check the API and Supabase project status: https://supabase.com/dashboard/project/${SUPABASE_PROJECT_REF}"
             exit 1
           fi
-
-          echo "Keep-alive OK -- API awake and database answered."
+          echo "The production database answered."
