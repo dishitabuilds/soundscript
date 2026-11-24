@@ -11,7 +11,7 @@
 ![Node](https://img.shields.io/badge/Node-22+-3a6a42)
 ![React](https://img.shields.io/badge/React-19-5b1a16)
 ![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20RLS-9a6f0e)
-![Tests](https://img.shields.io/badge/tests-100%20passing-3a6a42)
+![Tests](https://img.shields.io/badge/tests-node%3Atest-3a6a42)
 ![Deploy](https://img.shields.io/badge/deploy-Render-5b1a16)
 
 </div>
@@ -145,18 +145,23 @@ file ──► extract ──► clean ──► rules ──► chunk ──►
 
 ## Getting started
 
+```bash
+git clone https://github.com/dishitabuilds/soundscript.git
+cd soundscript
+```
+
 **Prerequisites:** Node 22.13+, a Supabase project, and an ElevenLabs (or OpenAI) API key.
 
 ```bash
 # 1. Backend
 cp .env.example .env          # fill in Supabase + ElevenLabs
-npm install
+npm ci
 npm start                     # http://localhost:5000
 
 # 2. Frontend (second terminal)
 cd tts-frontend
 cp .env.example .env          # fill in backend URL + Supabase
-npm install
+npm ci
 npm run dev                   # http://localhost:5173
 
 # 3. Supabase (schema, RLS, RPCs, buckets)
@@ -230,10 +235,15 @@ Built by [**dishita**](https://github.com/dishitabuilds) ·
 
 ## Verification and safe testing
 
+Recent additions include document search, a source-citing study assistant, and a
+local Kokoro speech option. These are optional capabilities with their own setup
+and evaluation records; they are not all implied by the hosted audio demo.
+
 The optional AI study assistant adds document retrieval, source citations and
 audio links, retrieval ablations, and a trainable cross-encoder reranker. See the
-[setup, evaluation, and fine-tuning guide](docs/ai-study-assistant.md). It is
-disabled until its database migration and model service are configured.
+[setup, evaluation, and fine-tuning guide](docs/ai-study-assistant.md). Its availability depends on database migrations and configured model services;
+the checked-in Render configuration enables document retrieval. This does not
+confirm that every optional provider or model service is available on the host.
 
 For speech without monthly provider credits, use the [free local Kokoro provider
 and automatic quota fallback](docs/free-speech.md). The larger ranking experiment
